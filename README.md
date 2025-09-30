@@ -126,7 +126,7 @@ class DataAnalysisSection(PromptSection):
         data = "\n\n".join(p.run() for p in self.providers)
         tools = "\n\n".join(str(t) for t in self.tools)
 
-        return dendent(f"""
+        return dedent(f"""
         {instruction}
 
         Available Data Providers:
