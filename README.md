@@ -1,4 +1,4 @@
-# Proompt 🚀
+# Proompt
 
 **Object-oriented prompt engineering for LLMs**
 
@@ -15,7 +15,11 @@ Using these functions:
 """
 
 # Write clean, composable prompts like this:
-from proompt.data import CsvDataProvider, FileDataProvider, SqliteProvider
+from proompt.data import (
+    CsvDataProvider,
+    FileDataProvider,
+    SqliteProvider,
+)
 from proompt.base.context import ToolContext
 
 section = PromptSection(
