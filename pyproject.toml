@@ -1,14 +1,17 @@
 [project]
 name = "proommpt"
 version = "0.1.0"
-description = "Add your description here"
+description = "Object-oriented prompting for Python"
+authors = [
+    {name = "Burhan Qaddoumi"}
+]
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "pydantic>=2.11.9",
 ]
 
-[dependency-groups]
+[project.optional-dependencies]
 dev = [
     "pylint>=3.3.8",
     "pytest>=8.4.2",
