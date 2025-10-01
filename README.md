@@ -30,6 +30,31 @@ section = PromptSection(
 )
 ```
 
+## Project Overview
+
+Proompt is organized into a clean, modular structure:
+
+```
+proompt/
+├── src/proompt/
+│   ├── base/              # Abstract base classes
+│   │   ├── context.py
+│   │   ├── prompt.py
+│   │   └── provider.py
+│   └── data.py            # Concrete data provider examples
+├── examples/              # Complete usage examples
+│   ├── 01-simple_quarterly_review.py
+│   ├── 02-intermediate_quarterly_review.py
+│   └── 03-advanced_quarterly_review.py
+└── tests/                 # Unit tests
+```
+
+**Key Components:**
+- **Base classes** define contracts for providers, contexts, and prompts
+- **Data providers** concrete examples of how to extend `DataProviders`
+- **Examples** show real-world implementations from simple to advanced
+- **Tests** ensure reliability and demonstrate usage patterns
+
 ## Why Proompt?
 
 **Traditional string-based prompts are painful:**
@@ -65,7 +90,7 @@ print(f"Analyze the data:\n{content}")
 
 ## Core Concepts
 
-A few example classes for extending the `DataProvider` class can be found in the `proompt.data` module. 
+A few example classes for extending the `DataProvider` class can be found in the `proompt.data` module.
 
 ### 🔌 Providers - Inject Data from Any Source
 
@@ -316,7 +341,7 @@ admin_prompt = AdminPrompt(analysis_section, ...)
 
 Coming soon
 
-<!-- 
+<!--
 
 Proompt is designed to be extensible. Common extension points:
 
@@ -326,5 +351,5 @@ Proompt is designed to be extensible. Common extension points:
 4. **Custom Prompts** - Full prompt templates for specific use cases
 
 
-See the [Contributing Guide](CONTRIBUTING.md) for details. 
+See the [Contributing Guide](CONTRIBUTING.md) for details.
 -->
