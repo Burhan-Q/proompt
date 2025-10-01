@@ -1,12 +1,30 @@
 [project]
-name = "proommpt"
+name = "proompt"
 version = "0.1.0"
 description = "Object-oriented prompting for Python"
 authors = [
     {name = "Burhan Qaddoumi"}
 ]
+maintainers = [
+  { name="https://github.com/Burhan-Q" }
+]
+
 readme = "README.md"
 requires-python = ">=3.12"
+keywords = [
+    "ai",
+    "prompting",
+    "prompts",
+    "object oriented",
+    "ai agent",
+    "prompt toolkit",
+    "devtools",
+    "developer tools",
+    "llm",
+    "prompt",
+    "code tools",
+    "structure",
+]
 dependencies = [
     "pydantic>=2.11.9",
 ]
@@ -17,6 +35,12 @@ dev = [
     "pytest>=8.4.2",
     "ruff>=0.13.2",
 ]
+
+[project.urls]
+homepage="https://github.com/Burhan-Q/proompt"
+source="https://github.com/Burhan-Q/proompt"
+issues="https://github.com/Burhan-Q/proompt/issues"
+
 
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.
