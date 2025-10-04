@@ -1,5 +1,6 @@
-import pytest
 from abc import ABCMeta
+
+import pytest
 
 from proompt.base.provider import BaseProvider
 
