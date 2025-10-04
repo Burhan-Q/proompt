@@ -66,7 +66,7 @@ class TableData:
         return to_markdown_table(self.headers, self.rows)
 
 
-class FileDataProvider(BaseProvider, str):
+class FileDataProvider(BaseProvider[str]):
     """A simple provider that returns the contents of a file."""
 
     def __init__(self, file: str | Path) -> None:
@@ -88,7 +88,7 @@ class FileDataProvider(BaseProvider, str):
         return self.file.read_text(*args, **kwargs)
 
 
-class CsvDataProvider(BaseProvider):
+class CsvDataProvider(BaseProvider[str]):
     """A simple provider that returns the contents of a CSV file."""
 
     def __init__(self, file: str | Path) -> None:
@@ -111,7 +111,7 @@ class CsvDataProvider(BaseProvider):
         return table_data.to_md()
 
 
-class SqliteProvider(BaseProvider):
+class SqliteProvider(BaseProvider[str]):
     """A provider that executes SQL queries against a SQLite database and returns formatted results."""
 
     def __init__(self, database_path: str | Path, query: str, table_name: str | None = None) -> None:
