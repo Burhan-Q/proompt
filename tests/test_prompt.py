@@ -69,17 +69,22 @@ class TestPromptSection:
     def tool_context(self):
         """Create a test tool context."""
 
-        def dummy_tool():
+        def dummy_tool(arg_one, kwarg_one="DOOOOOMN!") -> None:
+            """A tool that does nothing."""
             pass
 
         return ToolContext(dummy_tool)
 
     @pytest.fixture
-    def prompt_section(self, context, provider, tool_context):
+    def prompt_section(
+        self, context: ConcreteContext, provider: ConcreteProvider, tool_context: ToolContext
+    ) -> ConcretePromptSection:
         """Create a test prompt section with all components."""
         return ConcretePromptSection(context, [tool_context], provider)
 
-    def test_initialization_with_all_params(self, context, provider, tool_context):
+    def test_init_with_all_params(
+        self, context: ConcreteContext, provider: ConcreteProvider, tool_context: ToolContext
+    ):
         """Test initialization with all parameters."""
         section = ConcretePromptSection(context, [tool_context], provider)
 
@@ -97,7 +102,7 @@ class TestPromptSection:
         assert section.providers == []
         assert section.tools == []
 
-    def test_context_property_get(self, prompt_section, context):
+    def test_context_property_get(self, prompt_section: ConcretePromptSection, context: ConcreteContext):
         """Test context property getter."""
         assert prompt_section.context == context
 
@@ -132,8 +137,10 @@ class TestPromptSection:
         section.add_providers(provider1, provider2)
 
         assert len(section.providers) == 2
-        assert provider1 in section.providers
-        assert provider2 in section.providers
+        assert provider1 in section.providers and provider2 in section.providers
+
+        section = ConcretePromptSection(None, None, provider1, provider2)
+        assert provider1 in section.providers and provider2 in section.providers
 
     def test_add_providers_filters_invalid(self):
         """Test that add_providers filters out non-BaseProvider objects."""
@@ -142,8 +149,7 @@ class TestPromptSection:
 
         section.add_providers(provider, "not a provider", None)
 
-        assert len(section.providers) == 1
-        assert section.providers[0] == provider
+        assert len(section.providers) == 1 and all(isinstance(p, BaseProvider) for p in section.providers)
 
     def test_add_tools(self):
         """Test adding tools."""
@@ -154,8 +160,7 @@ class TestPromptSection:
         section.add_tools(tool1, tool2)
 
         assert len(section.tools) == 2
-        assert tool1 in section.tools
-        assert tool2 in section.tools
+        assert tool1 in section.tools and tool2 in section.tools
 
     def test_add_tools_filters_invalid(self):
         """Test that add_tools filters out non-ToolContext objects."""
@@ -164,8 +169,7 @@ class TestPromptSection:
 
         section.add_tools(tool, "not a tool", None)
 
-        assert len(section.tools) == 1
-        assert section.tools[0] == tool
+        assert len(section.tools) == 1 and all(isinstance(t, ToolContext) for t in section.tools)
 
     def test_str_delegates_to_render(self, prompt_section):
         """Test that __str__ delegates to render."""
@@ -188,11 +192,11 @@ class TestBasePrompt:
     """Test BasePrompt abstract base class."""
 
     @pytest.fixture
-    def prompt_sections(self):
+    def prompt_sections(self) -> list[ConcretePromptSection]:
         """Create test prompt sections."""
         return [ConcretePromptSection(), ConcretePromptSection()]
 
-    def test_initialization_with_sections(self, prompt_sections):
+    def test_init_with_sections(self, prompt_sections: list[ConcretePromptSection]):
         """Test initialization with sections."""
         prompt = ConcretePrompt(*prompt_sections)
 
@@ -201,14 +205,11 @@ class TestBasePrompt:
 
     def test_initialization_empty(self):
         """Test initialization without sections."""
-        prompt = ConcretePrompt()
-
-        assert prompt.sections == []
+        assert (prompt := ConcretePrompt()) and prompt.sections == []
 
     def test_str_delegates_to_render(self):
         """Test that __str__ delegates to render."""
-        prompt = ConcretePrompt()
-        assert str(prompt) == prompt.render()
+        assert (prompt := ConcretePrompt()) and str(prompt) == prompt.render()
 
     def test_abstract_method_enforced(self):
         """Test that render method is abstract."""
