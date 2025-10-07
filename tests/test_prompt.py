@@ -171,7 +171,7 @@ class TestPromptSection:
 
         assert len(section.tools) == 1 and all(isinstance(t, ToolContext) for t in section.tools)
 
-    def test_str_delegates_to_render(self, prompt_section):
+    def test_str_delegates_to_render(self, prompt_section: ConcretePromptSection):
         """Test that __str__ delegates to render."""
         assert str(prompt_section) == prompt_section.render()
 
