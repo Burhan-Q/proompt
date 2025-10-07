@@ -47,6 +47,6 @@ class ToolContext(Context):
         Name: {self.tool_name}
         Description: {self.tool_description}
         Arguments: {self.args_render()}
-        Returns: {self.output_type.__name__ if self.output_type is not inspect.Signature.empty else "None"}
+        Returns: {"None" if self.output_type in (inspect.Signature.empty, None) else self.output_type.__name__}
         Usage: {self.tool_use}
         """)
