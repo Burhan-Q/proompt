@@ -5,7 +5,12 @@ from typing import Callable
 
 
 class Context(ABC):
-    """Base class for different types of contexts."""
+    """
+    Base class for different types of contexts.
+
+    Methods:
+        render: abstract method to be defined in concrete class to generate string; also aliased using `str()`
+    """
 
     @abstractmethod
     def render(self) -> str:
@@ -18,7 +23,20 @@ class Context(ABC):
 
 
 class ToolContext(Context):
-    """Context for a tool, including its name, arguments, return type, and description."""
+    """
+    Context for a tool, including its name, arguments, return type, and description.
+    
+    Attributes:
+        tool_use (str): Description of how to use the tool.
+        tool_name (str): Name of the tool.
+        tool_args (MappingProxytype): Arguments accepted by the tool.
+        output_type (Any): Expected output type of the tool.
+        tool_description (str): Description of the tool's functionality.
+
+    Methods:
+        args_render: renders text for tool arguments
+        render: generates string information for tool context, also aliased using `str()`
+    """
 
     def __init__(self, tool: Callable, tool_use: str | None = None) -> None:
         """Initialize the ToolContext with a tool function."""
@@ -39,7 +57,7 @@ class ToolContext(Context):
             if param.default is not inspect.Parameter.empty:
                 arg += f"{' = ' + str(param.default)}"
             args_list.append(arg)
-        return ", ".join(args_list)
+        return ", ".join(args_list) if args_list else "Doesn't accept arguments"
 
     def render(self) -> str:
         """Render the tool context as a string."""
