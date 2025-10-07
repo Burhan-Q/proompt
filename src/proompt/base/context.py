@@ -25,7 +25,7 @@ class Context(ABC):
 class ToolContext(Context):
     """
     Context for a tool, including its name, arguments, return type, and description.
-    
+
     Attributes:
         tool_use (str): Description of how to use the tool.
         tool_name (str): Name of the tool.
