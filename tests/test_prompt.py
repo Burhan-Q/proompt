@@ -102,6 +102,28 @@ class TestPromptSection:
         assert section.providers == []
         assert section.tools == []
 
+    def test_name_and_description_defaults(self):
+        """Test that optional name and description default to None."""
+        section = ConcretePromptSection()
+        section2 = ConcretePromptSection()
+        section2.name = "Test Section"
+        section2.description = "A section for testing"
+
+        assert section.name is None
+        assert section.description is None
+        assert section2.name != section.name
+        assert section2.description != section.description
+
+    def test_name_and_description_assignment(self):
+        """Test assigning name and description after initialization."""
+        section = ConcretePromptSection()
+
+        section.name = "Overview"
+        section.description = "High-level details"
+
+        assert section.name == "Overview"
+        assert section.description == "High-level details"
+
     def test_context_property_get(self, prompt_section: ConcretePromptSection, context: ConcreteContext):
         """Test context property getter."""
         assert prompt_section.context == context
