@@ -5,7 +5,20 @@ from proompt.base.provider import BaseProvider
 
 
 class PromptSection(ABC):
-    """Abstract base class for different sections of a prompt."""
+    """
+    Abstract base class for different sections of a prompt.
+    
+    Attributes:
+        context (Context): context information only accessible at runtime
+        tools (list[ToolContext]): context information on tools to include in prompt
+        providers (BaseProvider): variable number of data providers, generally a subclass of BaseProvider
+    
+    Methods:
+        add_providers: extend the providers included
+        add_tools: extend the tools included
+        formatter: abstract method to be defined in concrete class
+        render: abstract method to be defined in concrete class; also aliased using `str()`
+    """
 
     def __init__(
         self,
@@ -55,7 +68,15 @@ class PromptSection(ABC):
 
 
 class BasePrompt(ABC):
-    """Abstract base class for different types of prompts."""
+    """
+    Abstract base class for different types of prompts.
+    
+    Attributes:
+        sections (PromptSection): list of prompt sections that compose the final prompt
+    
+    Methods:
+        render: abstract method to be defined by concrete class; also aliased using `str()`
+    """
 
     def __init__(self, *sections: PromptSection) -> None:
         self.sections = list(sections or [])
