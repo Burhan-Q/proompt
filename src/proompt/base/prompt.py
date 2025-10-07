@@ -11,6 +11,8 @@ class PromptSection(ABC):
     Attributes:
         tools (list[ToolContext]): context information on tools to include in prompt
         providers (BaseProvider): variable number of data providers, generally a subclass of BaseProvider
+        name (str | None): optional name of the section
+        description (str | None): optional description of the section
 
     Properties:
         context (Context): context information only accessible at runtime
@@ -31,6 +33,9 @@ class PromptSection(ABC):
         self._context = context
         self.providers = list(providers or [])
         self.tools = tools or []
+
+    name: str | None = None
+    description: str | None = None
 
     @property
     def context(self) -> Context:
