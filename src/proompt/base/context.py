@@ -33,12 +33,12 @@ class ToolContext(Context):
         """Render the tool arguments as a string."""
         args_list = []
         for name, param in self.tool_args.items():
+            arg = f"{name}"
             if param.annotation is not inspect.Parameter.empty:
-                args_list.append(
-                    f"{name}: {param.annotation.__name__}{' = ' + str(param.default) if param.default is not inspect.Parameter.empty else ''}"
-                )
-            else:
-                args_list.append(name)
+                arg += f": {param.annotation.__name__}"
+            if param.default is not inspect.Parameter.empty:
+                arg += f"{' = ' + str(param.default)}"
+            args_list.append(arg)
         return ", ".join(args_list)
 
     def render(self) -> str:
