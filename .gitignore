@@ -16,3 +16,6 @@ wheels/
 MacOS
 .DS_Store
 Thumbs.db
+
+.*_docs/
+.coverage

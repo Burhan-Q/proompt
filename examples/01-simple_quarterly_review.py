@@ -53,7 +53,7 @@ def calculate_growth_rate(current: float, previous: float) -> dict[str, str]:
     """Calculate simple growth rate."""
     if previous == 0:
         return {"growth_rate": "N/A", "trend": "new"}
-    
+
     rate = (current - previous) / previous
     trend = "up" if rate > 0 else "down"
     return {"growth_rate": f"{rate:.1%}", "trend": trend}
@@ -104,7 +104,7 @@ class MetricsSection(PromptSection):
         # Format with proper indentation
         data = "\n\n".join(formatted_data)
         data = indent(data, INDENT_12)
-        
+
         tools_desc = ", ".join(tool.tool_name for tool in self.tools)
         tools_desc = indent(tools_desc, INDENT_12)
 
@@ -165,7 +165,7 @@ class SimpleQuarterlyPrompt(BasePrompt):
 
 def main():
     """Demonstrate the simple quarterly review."""
-    
+
     print("🚀 Simple Quarterly Review Example")
     print("=" * 35)
 

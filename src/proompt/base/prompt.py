@@ -25,12 +25,15 @@ class PromptSection(ABC):
     def __init__(
         self,
         context: Context | None = None,
-        tools: list[ToolContext] | None = None,
+        tools: list | None = None,
         *providers: BaseProvider | None,
-    ):
+    ) -> None:
+        """Initialize the PromptSection with context, tools, and providers."""
         self._context = context
         self.providers = list(providers or [])
-        self.tools = tools or []
+        self.tools: list[ToolContext] = []
+        for t in tools or []:
+            self.tools.extend(ToolContext.normalize(t))
 
     @property
     def context(self) -> Context:
@@ -50,9 +53,10 @@ class PromptSection(ABC):
         """Add variable quantity of providers."""
         self.providers.extend([p for p in providers if isinstance(p, BaseProvider)])
 
-    def add_tools(self, *tools: ToolContext) -> None:
-        """Add variable quantity of tools."""
-        self.tools.extend([t for t in tools if isinstance(t, ToolContext)])
+    def add_tools(self, *tools) -> None:
+        """Add variable quantity of tools (ToolContext, pydantic-ai Tool, or FunctionToolset)."""
+        for t in tools:
+            self.tools.extend(ToolContext.normalize(t))
 
     @abstractmethod
     def formatter(self, *args, **kwargs) -> str:
@@ -81,6 +85,7 @@ class BasePrompt(ABC):
     """
 
     def __init__(self, *sections: PromptSection) -> None:
+        """Initialize the BasePrompt with sections."""
         self.sections = list(sections or [])
 
     @abstractmethod

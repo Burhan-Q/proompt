@@ -3,6 +3,9 @@ from abc import ABC, abstractmethod
 from textwrap import dedent
 from typing import Callable
 
+from pydantic_ai.tools import Tool
+from pydantic_ai.toolsets import FunctionToolset
+
 
 class Context(ABC):
     """
@@ -29,9 +32,9 @@ class ToolContext(Context):
     Attributes:
         tool_use (str): Description of how to use the tool.
         tool_name (str): Name of the tool.
+        tool_description (str): Description of the tool's functionality.
         tool_args (MappingProxytype): Arguments accepted by the tool.
         output_type (Any): Expected output type of the tool.
-        tool_description (str): Description of the tool's functionality.
 
     Methods:
         args_render: renders text for tool arguments
@@ -43,9 +46,53 @@ class ToolContext(Context):
         self._tool = tool
         self.tool_use = tool_use or "Reference description for usage."
         self.tool_name = tool.__name__
+        self.tool_description = tool.__doc__ or "No description available."
         self.tool_args = inspect.signature(tool).parameters
         self.output_type = inspect.signature(tool).return_annotation
-        self.tool_description = tool.__doc__ or "No description available."
+
+    @classmethod
+    def from_pydantic_tool(cls, tool: Tool) -> "ToolContext":
+        """
+        Create a ToolContext from a pydantic-ai Tool object.
+
+        Args:
+            tool: A pydantic-ai Tool instance
+
+        Returns:
+            ToolContext wrapping the tool's function with its metadata
+        """
+        return cls(tool=tool.function)
+
+    @classmethod
+    def normalize(cls, tool: Callable | "ToolContext" | Tool | FunctionToolset | None) -> list["ToolContext"]:
+        """
+        Normalize any tool type to a list of ToolContext instances.
+
+        Accepts:
+        - ToolContext: Returns as single-item list
+        - Tool (pydantic-ai): Converts via from_pydantic_tool
+        - FunctionToolset (pydantic-ai): Extracts all tools from .tools dict
+        - None or invalid: Returns empty list
+
+        Args:
+            tool (Callable | ToolContext | Tool | FunctionToolset | None): Tool of any supported type
+
+        Returns:
+            List of ToolContext instances (may be empty)
+        """
+        result: list[ToolContext] = []
+
+        if isinstance(tool, cls):
+            result.append(tool)
+        elif isinstance(tool, Tool):
+            result.append(cls.from_pydantic_tool(tool))
+        elif isinstance(tool, FunctionToolset):
+            for pydantic_tool in tool.tools.values():
+                result.append(cls.from_pydantic_tool(pydantic_tool))
+        elif isinstance(tool, Callable):
+            result.append(cls(tool=tool))
+
+        return result
 
     def args_render(self) -> str:
         """Render the tool arguments as a string."""
