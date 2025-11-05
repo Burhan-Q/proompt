@@ -1,7 +1,16 @@
 import inspect
 from abc import ABC, abstractmethod
 from textwrap import dedent
-from typing import Callable
+from typing import TYPE_CHECKING, Callable
+
+# Conditional import for pydantic-ai support (optional dependency)
+try:
+    from pydantic_ai.tools import Tool as PydanticTool  # noqa: F401
+    PYDANTIC_AI_AVAILABLE = True
+except ImportError:
+    PYDANTIC_AI_AVAILABLE = False
+    if TYPE_CHECKING:
+        from pydantic_ai.tools import Tool as PydanticTool  # noqa: F401
 
 
 class Context(ABC):
@@ -42,10 +51,39 @@ class ToolContext(Context):
         """Initialize the ToolContext with a tool function."""
         self._tool = tool
         self.tool_use = tool_use or "Reference description for usage."
-        self.tool_name = tool.__name__
         self.tool_args = inspect.signature(tool).parameters
         self.output_type = inspect.signature(tool).return_annotation
-        self.tool_description = tool.__doc__ or "No description available."
+        self.name = tool.__name__
+        self.description = tool.__doc__ or "No description available."
+
+    @classmethod
+    def from_pydantic_tool(cls, tool: "PydanticTool") -> "ToolContext":
+        """
+        Create a ToolContext from a pydantic-ai Tool object.
+        
+        Args:
+            tool: A pydantic_ai.tools.Tool instance
+            
+        Returns:
+            A ToolContext instance that wraps the pydantic-ai Tool
+            
+        Raises:
+            ImportError: If pydantic-ai is not installed
+        """
+        if not PYDANTIC_AI_AVAILABLE:
+            raise ImportError(
+                "pydantic-ai is not installed. Install it with: pip install pydantic-ai"
+            )
+        
+        # Create a ToolContext using the Tool's function
+        # The Tool object has: name, description, function, parameters_json_schema
+        instance = cls(tool.function, tool_use="Pydantic-AI Tool")
+        
+        # Override attributes with pydantic-ai Tool's metadata
+        instance.name = tool.name
+        instance.description = tool.description or "No description available."
+        
+        return instance
 
     def args_render(self) -> str:
         """Render the tool arguments as a string."""
@@ -62,8 +100,8 @@ class ToolContext(Context):
     def render(self) -> str:
         """Render the tool context as a string."""
         return dedent(f"""
-        Name: {self.tool_name}
-        Description: {self.tool_description}
+        Name: {self.name}
+        Description: {self.description}
         Arguments: {self.args_render()}
         Returns: {"None" if self.output_type in (inspect.Signature.empty, None) else self.output_type.__name__}
         Usage: {self.tool_use}
