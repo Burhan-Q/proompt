@@ -71,7 +71,7 @@ class AnalysisSection(PromptSection):
     """A section that uses both proompt and pydantic-ai tools."""
 
     def formatter(self) -> str:
-        tools_list = "\n" + "\n".join(f"- {tool.name}: {tool.description}" for tool in self.tools)
+        tools_list = "\n" + "\n".join(f"- {tool.tool_name}: {tool.tool_description}" for tool in self.tools)
         return dedent(f"""\
             ## ANALYSIS TOOLS
             
@@ -116,7 +116,7 @@ def main():
     print("-" * 80)
     section2 = AnalysisSection(tools=[analysis_toolset])
     print(f"Tools in section: {len(section2.tools)}")
-    print("Tool names:", [t.name for t in section2.tools])
+    print("Tool names:", [t.tool_name for t in section2.tools])
     print()
 
     # Method 3: Mix ToolContext and pydantic-ai tools
@@ -130,7 +130,7 @@ def main():
         ]
     )
     print(f"Tools in section: {len(section3.tools)}")
-    print("Tool names:", [t.name for t in section3.tools])
+    print("Tool names:", [t.tool_name for t in section3.tools])
     print()
 
     # Create a full prompt
@@ -155,14 +155,14 @@ def main():
     section4.add_tools(analysis_toolset)
     print(f"After adding FunctionToolset: {len(section4.tools)}")
 
-    print("Final tool names:", [t.name for t in section4.tools])
+    print("Final tool names:", [t.tool_name for t in section4.tools])
     print()
 
     # Show tool rendering
     print("Individual Tool Rendering:")
     print("=" * 80)
     for tool in section3.tools[:3]:  # Show first 3 tools
-        print(f"\n{tool.name}:")
+        print(f"\n{tool.tool_name}:")
         print("-" * 40)
         print(tool.render())
 

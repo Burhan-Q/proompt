@@ -44,11 +44,11 @@ class ToolContext(Context):
     def __init__(self, tool: Callable, tool_use: str | None = None) -> None:
         """Initialize the ToolContext with a tool function."""
         self._tool = tool
+        self.tool_name = tool.__name__
         self.tool_use = tool_use or "Reference description for usage."
+        self.tool_description = tool.__doc__ or "No description available."
         self.tool_args = inspect.signature(tool).parameters
         self.output_type = inspect.signature(tool).return_annotation
-        self.name = tool.__name__
-        self.description = tool.__doc__ or "No description available."
 
     @classmethod
     def from_pydantic_tool(cls, tool: Tool) -> "ToolContext":
@@ -107,8 +107,8 @@ class ToolContext(Context):
     def render(self) -> str:
         """Render the tool context as a string."""
         return dedent(f"""
-        Name: {self.name}
-        Description: {self.description}
+        Name: {self.tool_name}
+        Description: {self.tool_description}
         Arguments: {self.args_render()}
         Returns: {"None" if self.output_type in (inspect.Signature.empty, None) else self.output_type.__name__}
         Usage: {self.tool_use}
