@@ -18,3 +18,4 @@ MacOS
 Thumbs.db
 
 .*_docs/
+.coverage
