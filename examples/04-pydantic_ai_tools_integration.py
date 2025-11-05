@@ -164,7 +164,7 @@ def main():
     for tool in section3.tools[:3]:  # Show first 3 tools
         print(f"\n{tool.tool_name}:")
         print("-" * 40)
-        print(tool.render())
+        print(tool)  # automatically uses __str__() to render
 
 
 if __name__ == "__main__":
