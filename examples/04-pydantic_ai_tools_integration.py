@@ -12,19 +12,10 @@ with proompt's PromptSection. It shows:
 
 from textwrap import dedent, indent
 
+from pydantic_ai import FunctionToolset, RunContext, Tool
+
 from proompt.base.context import ToolContext
 from proompt.base.prompt import BasePrompt, PromptSection
-
-# Check if pydantic-ai is available
-try:
-    from pydantic_ai import FunctionToolset, RunContext, Tool
-
-    PYDANTIC_AI_AVAILABLE = True
-except ImportError:
-    print("This example requires pydantic-ai. Install it with: pip install pydantic-ai")
-    PYDANTIC_AI_AVAILABLE = False
-    exit(1)
-
 
 # ===== DEFINE SOME TOOLS USING PYDANTIC-AI =====
 
@@ -54,6 +45,7 @@ calc_tool = Tool(calculate_percentage, takes_ctx=False)
 # Create a FunctionToolset
 analysis_toolset = FunctionToolset(tools=[search_tool, metrics_tool])
 
+
 # You can also add tools using the decorator
 @analysis_toolset.tool
 def summarize_data(ctx: RunContext, data: str) -> str:
@@ -79,13 +71,12 @@ class AnalysisSection(PromptSection):
     """A section that uses both proompt and pydantic-ai tools."""
 
     def formatter(self) -> str:
-        tools_list = "\n".join(f"  - {tool.name}: {tool.description}" for tool in self.tools)
+        tools_list = "\n" + "\n".join(f"- {tool.name}: {tool.description}" for tool in self.tools)
         return dedent(f"""\
             ## ANALYSIS TOOLS
             
             You have access to the following tools:
-            
-{indent(tools_list, '            ')}
+            {indent(tools_list, " " * 12)}
             
             Use these tools to gather and analyze data for your report.
             """).strip()
@@ -177,5 +168,4 @@ def main():
 
 
 if __name__ == "__main__":
-    if PYDANTIC_AI_AVAILABLE:
-        main()
+    main()

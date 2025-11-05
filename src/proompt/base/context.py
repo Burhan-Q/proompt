@@ -1,16 +1,10 @@
 import inspect
 from abc import ABC, abstractmethod
 from textwrap import dedent
-from typing import TYPE_CHECKING, Callable
+from typing import Callable
 
-# Conditional import for pydantic-ai support (optional dependency)
-try:
-    from pydantic_ai.tools import Tool as PydanticTool  # noqa: F401
-    PYDANTIC_AI_AVAILABLE = True
-except ImportError:
-    PYDANTIC_AI_AVAILABLE = False
-    if TYPE_CHECKING:
-        from pydantic_ai.tools import Tool as PydanticTool  # noqa: F401
+from pydantic_ai.tools import Tool
+from pydantic_ai.toolsets import FunctionToolset
 
 
 class Context(ABC):
@@ -57,33 +51,46 @@ class ToolContext(Context):
         self.description = tool.__doc__ or "No description available."
 
     @classmethod
-    def from_pydantic_tool(cls, tool: "PydanticTool") -> "ToolContext":
+    def from_pydantic_tool(cls, tool: Tool) -> "ToolContext":
         """
         Create a ToolContext from a pydantic-ai Tool object.
-        
+
         Args:
-            tool: A pydantic_ai.tools.Tool instance
-            
+            tool: A pydantic-ai Tool instance
+
         Returns:
-            A ToolContext instance that wraps the pydantic-ai Tool
-            
-        Raises:
-            ImportError: If pydantic-ai is not installed
+            ToolContext wrapping the tool's function with its metadata
         """
-        if not PYDANTIC_AI_AVAILABLE:
-            raise ImportError(
-                "pydantic-ai is not installed. Install it with: pip install pydantic-ai"
-            )
-        
-        # Create a ToolContext using the Tool's function
-        # The Tool object has: name, description, function, parameters_json_schema
-        instance = cls(tool.function, tool_use="Pydantic-AI Tool")
-        
-        # Override attributes with pydantic-ai Tool's metadata
-        instance.name = tool.name
-        instance.description = tool.description or "No description available."
-        
-        return instance
+        return cls(tool=tool.function)
+
+    @classmethod
+    def normalize(cls, tool: Callable | "ToolContext" | Tool | FunctionToolset | None) -> list["ToolContext"]:
+        """
+        Normalize any tool type to a list of ToolContext instances.
+
+        Accepts:
+        - ToolContext: Returns as single-item list
+        - Tool (pydantic-ai): Converts via from_pydantic_tool
+        - FunctionToolset (pydantic-ai): Extracts all tools from .tools dict
+        - None or invalid: Returns empty list
+
+        Args:
+            tool (Callable | ToolContext | Tool | FunctionToolset | None): Tool of any supported type
+
+        Returns:
+            List of ToolContext instances (may be empty)
+        """
+        result: list[ToolContext] = []
+
+        if isinstance(tool, cls):
+            result.append(tool)
+        elif isinstance(tool, Tool):
+            result.append(cls.from_pydantic_tool(tool))
+        elif isinstance(tool, FunctionToolset):
+            for pydantic_tool in tool.tools.values():
+                result.append(cls.from_pydantic_tool(pydantic_tool))
+
+        return result
 
     def args_render(self) -> str:
         """Render the tool arguments as a string."""
