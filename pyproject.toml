@@ -1,6 +1,6 @@
 [project]
 name = "proompt"
-version = "0.2.0"
+version = "0.2.1"
 description = "Object-oriented prompting for Python"
 authors = [
     {name = "Burhan Qaddoumi"}
