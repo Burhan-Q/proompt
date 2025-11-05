@@ -86,11 +86,11 @@ class ToolContext(Context):
             result.append(tool)
         elif isinstance(tool, Tool):
             result.append(cls.from_pydantic_tool(tool))
-        elif isinstance(tool, Callable):
-            result.append(cls(tool=tool))
         elif isinstance(tool, FunctionToolset):
             for pydantic_tool in tool.tools.values():
                 result.append(cls.from_pydantic_tool(pydantic_tool))
+        elif isinstance(tool, Callable):
+            result.append(cls(tool=tool))
 
         return result
 
