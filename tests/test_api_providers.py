@@ -159,7 +159,7 @@ class TestJSONPlaceholderProvider:
         }
         
         result = provider._format_single_item(test_item)
-        assert "## Posts Item 1" in result  # Capitalized by .title()
+        assert "## Posts Item 1" in result
         assert "Test Post" in result
         assert "userId" in result
 
@@ -187,7 +187,7 @@ class TestJSONPlaceholderProvider:
         ]
         
         result = provider._format_list(items)
-        assert "## Posts" in result  # Capitalized by .title()
+        assert "## Posts" in result
         assert "showing 2 items" in result
         assert "|" in result  # Markdown table
 
@@ -379,7 +379,7 @@ class TestEdgeCases:
         provider = JSONPlaceholderProvider("posts", item_id=0)
         assert provider.item_id == 0
         # item_id of 0 is falsy, so it won't appear in name
-        assert "JSONPlaceholder API - /posts" == provider.name
+        assert provider.name == "JSONPlaceholder API - /posts"
 
     def test_github_provider_empty_endpoint(self):
         """Test GitHub provider with empty endpoint."""

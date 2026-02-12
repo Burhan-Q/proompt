@@ -469,12 +469,14 @@ def main():
     print("   • Use mock providers for testing and development")
     print("\n🔗 These providers can be used in PromptSections just like")
     print("   FileDataProvider, CsvDataProvider, etc.")
-    print("\n📚 Example Usage in a PromptSection:")
+    print("\n📚 Generic Example:")
+    print("   from proompt.base.prompt import PromptSection")
     print("   section = PromptSection(")
-    print("       context=my_context,")
-    print("       tools=[tool1, tool2],")
-    print("       MockAPIProvider('users'),  # or any other provider")
+    print("       context,")
+    print("       tools,")
+    print("       MockAPIProvider('users'),")
     print("   )")
+    print("\n📚 Concrete Integration Example:")
     
     # Demonstration with actual PromptSection
     print("\n\n" + "=" * 60)
