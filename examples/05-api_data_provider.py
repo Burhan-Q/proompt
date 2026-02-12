@@ -475,6 +475,44 @@ def main():
     print("       tools=[tool1, tool2],")
     print("       MockAPIProvider('users'),  # or any other provider")
     print("   )")
+    
+    # Demonstration with actual PromptSection
+    print("\n\n" + "=" * 60)
+    print("🎯 Integration Example: API Provider in PromptSection")
+    print("-" * 60)
+    
+    from proompt.base.prompt import PromptSection
+    from proompt.base.context import Context
+    
+    class SimpleContext(Context):
+        def render(self) -> str:
+            return "Context: API data analysis for business intelligence"
+    
+    class DataAnalysisSection(PromptSection):
+        def formatter(self) -> str:
+            # Get data from all providers
+            data_outputs = [provider.run() for provider in self.providers]
+            combined_data = "\n\n".join(data_outputs)
+            
+            return f"""## Data Analysis Section
+            
+{combined_data}
+
+Task: Analyze the above data and provide insights."""
+        
+        def render(self) -> str:
+            return self.formatter()
+    
+    # Create section with mock API providers
+    section = DataAnalysisSection(
+        SimpleContext(),
+        [],  # tools
+        MockAPIProvider("users"),
+        MockAPIProvider("products"),
+    )
+    
+    print(section.render())
+    print("\n✅ Successfully integrated API providers into PromptSection!")
 
 
 if __name__ == "__main__":
