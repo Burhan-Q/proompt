@@ -45,7 +45,9 @@ proompt/
 ├── examples/              # Complete usage examples
 │   ├── 01-simple_quarterly_review.py
 │   ├── 02-intermediate_quarterly_review.py
-│   └── 03-advanced_quarterly_review.py
+│   ├── 03-advanced_quarterly_review.py
+│   ├── 04-pydantic_ai_tools_integration.py
+│   └── 05-api_data_provider.py
 └── tests/                 # Unit tests
 ```
 
@@ -251,6 +253,12 @@ class ApiProvider(BaseProvider, str):
 api = ApiProvider("https://api.example.com", "your-key")
 data = api.run("users")
 ```
+
+**For a complete, working example of API-based DataProviders**, see [`examples/05-api_data_provider.py`](examples/05-api_data_provider.py) which demonstrates:
+- REST API integration with error handling
+- GitHub API provider with authentication headers
+- Mock API provider for testing without network access
+- Generic configurable REST API provider template
 
 ### Data Transformation
 
