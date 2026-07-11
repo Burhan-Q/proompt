@@ -13,9 +13,17 @@ wheels/
 .vscode/
 *.code-workspace
 
-MacOS
+# MacOS
 .DS_Store
 Thumbs.db
 
+# Other
 .*_docs/
 .coverage
+.env
+*.png
+*.jpg
+*.mp4
+*.mov
+*.pdf
+*.gif
