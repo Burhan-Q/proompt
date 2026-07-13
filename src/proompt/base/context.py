@@ -1,7 +1,5 @@
-import collections.abc
 import inspect
 import re
-import types
 import typing
 from abc import ABC, abstractmethod
 from textwrap import dedent
@@ -22,40 +20,24 @@ def _strip_modules(text: str) -> str:
 
 
 def render_annotation(annotation: object) -> str:
-    """Render a type annotation to a clean source-style string.
+    """Render a type annotation as a clean, source-style string.
 
-    Handles unions (X | Y), subscripted generics, custom classes (module
-    prefixes stripped), Ellipsis, None, and empty annotations. Never raises
-    on types.UnionType (unlike annotation.__name__).
+    Delegates structural formatting (subscripted generics, Callable, Literal,
+    and nesting) to inspect.formatannotation, then strips module prefixes so
+    custom classes read as bare names. Optional/Union are normalized to the
+    "A | B" form. Unlike annotation.__name__, this never raises on
+    types.UnionType and never truncates generic parameters; empty annotations
+    render as "".
     """
     if annotation is inspect.Parameter.empty or annotation is inspect.Signature.empty:
-        return ""
-    if annotation is None or annotation is _NONE_TYPE:
-        return "None"
-    if annotation is Ellipsis:
-        return "..."
-    if isinstance(annotation, type) and not typing.get_args(annotation):
-        return annotation.__qualname__
-
-    origin = typing.get_origin(annotation)
-    args = typing.get_args(annotation)
-
-    if origin is typing.Union or isinstance(annotation, types.UnionType):
-        return " | ".join(render_annotation(a) for a in args)
-
-    if origin is not None:
-        if origin is typing.Literal:
-            return f"Literal[{', '.join(repr(a) for a in args)}]"
-        if origin is collections.abc.Callable:
-            params, ret = args[0], args[-1]
-            params_s = "..." if params is Ellipsis else f"[{', '.join(render_annotation(p) for p in params)}]"
-            return f"Callable[{params_s}, {render_annotation(ret)}]"
-        name = origin.__qualname__ if isinstance(origin, type) else getattr(origin, "_name", None) or str(origin)
-        if args:
-            return f"{name}[{', '.join(render_annotation(a) for a in args)}]"
-        return name
-
-    return _strip_modules(inspect.formatannotation(annotation))
+        result = ""
+    elif annotation is None or annotation is _NONE_TYPE:
+        result = "None"
+    elif typing.get_origin(annotation) is typing.Union:
+        result = " | ".join(render_annotation(arg) for arg in typing.get_args(annotation))
+    else:
+        result = _strip_modules(inspect.formatannotation(annotation))
+    return result
 
 
 class Context(RenderStrMixin, ABC):
