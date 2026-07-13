@@ -108,3 +108,10 @@ class TestBaseProvider:
         assert "name" in BaseProvider.__abstractmethods__
         assert "provider_ctx" in BaseProvider.__abstractmethods__
         assert "run" in BaseProvider.__abstractmethods__
+
+    def test_repr_includes_name_and_ctx(self, provider: ConcreteProvider):
+        """__repr__ surfaces the mandated metadata."""
+        r = repr(provider)
+        assert "ConcreteProvider" in r
+        assert "test_provider" in r  # name
+        assert "test context" in r  # provider_ctx
