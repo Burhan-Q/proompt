@@ -1,6 +1,7 @@
-# Unit Tests for proompt.base module
+# Unit Tests for proompt
 
-This directory contains comprehensive unit tests for the `proompt.base` module components.
+This directory contains comprehensive unit tests for the `proompt.base` module components,
+the concrete `proompt.data`/`proompt.providers` providers, and the top-level `proompt` package.
 
 ## Test Structure
 
@@ -10,11 +11,15 @@ This directory contains comprehensive unit tests for the `proompt.base` module c
   - Tests `arun()` raises NotImplementedError by default
   - Tests abstract method enforcement
   - Tests property access
+  - Tests default `__repr__` surfaces `name`/`provider_ctx`
 
 ### test_context.py
 - **TestContextBase**: Tests for the abstract Context class
   - Tests `__str__` delegation to `render()`
   - Tests abstract method enforcement
+- **TestRenderAnnotation**: Tests for the `render_annotation()` helper
+  - Parametrized over plain types, unions, subscripted generics, `Literal`,
+    `Callable`, `TypeVar`, and custom classes
 - **TestToolContext**: Tests for ToolContext implementation
   - Tests initialization with different function signatures
   - Tests argument rendering with/without type annotations
@@ -33,6 +38,15 @@ This directory contains comprehensive unit tests for the `proompt.base` module c
   - Tests initialization with sections
   - Tests `__str__` delegation to `render()`
   - Tests abstract method enforcement
+
+### test_data.py
+- Tests `CsvDataProvider`/`SqliteProvider`/`FileDataProvider` return raw `TableData`
+  (not pre-rendered markdown) from `run()`
+- Tests the `proompt.providers` namespace re-exports the same objects as `proompt.data`
+- Tests empty-result handling (zero rows, header-only CSV) renders "No results found."
+
+### test_package.py
+- Tests the top-level `proompt` package exposes the curated public API via `__all__`
 
 ## Design Principles
 
@@ -54,4 +68,4 @@ The test suite covers:
 - ✅ String representation methods
 - ✅ Initialization with various parameters
 
-All 63 tests pass, ensuring the base module functionality is working correctly.
+All 70 tests pass, ensuring the library's functionality is working correctly.

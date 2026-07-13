@@ -125,7 +125,7 @@ class ToolContext(RenderStrMixin):
         - None or invalid: Returns empty list
 
         Args:
-            tool (Callable | ToolContext | Tool | FunctionToolset | None): Tool of any supported type
+            tool (ToolLike | None): Tool of any supported type
 
         Returns:
             List of ToolContext instances (may be empty)

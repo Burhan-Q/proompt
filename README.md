@@ -17,6 +17,8 @@ Using these functions:
 # Write clean, composable prompts like this:
 from proompt import CsvDataProvider, FileDataProvider, PromptSection, ToolContext
 
+# MySection is illustrative — define `class MySection(PromptSection)` with your own
+# `render()` (see "Prompt Sections - Compose Complex Prompts" below for a concrete example)
 section = MySection(
     context=my_context,
     providers=[CsvDataProvider("data.csv"), FileDataProvider("file.txt")],
@@ -33,21 +35,28 @@ proompt/
 ├── src/proompt/
 │   ├── base/              # Abstract base classes
 │   │   ├── context.py
+│   │   ├── mixins.py
 │   │   ├── prompt.py
 │   │   └── provider.py
-│   └── data.py            # Concrete data provider examples
+│   ├── data.py            # Concrete data provider implementations
+│   └── providers.py       # Re-exports concrete providers under a shorter path
 ├── examples/              # Complete usage examples
 │   ├── 01-simple_quarterly_review.py
 │   ├── 02-intermediate_quarterly_review.py
-│   └── 03-advanced_quarterly_review.py
+│   ├── 03-advanced_quarterly_review.py
+│   └── 04-pydantic_ai_tools_integration.py
 └── tests/                 # Unit tests
 ```
 
 **Key Components:**
 - **Base classes** define contracts for providers, contexts, and prompts
-- **Data providers** concrete examples of how to extend `DataProviders`
+- **Data providers** concrete examples of how to extend `BaseProvider`
 - **Examples** show real-world implementations from simple to advanced
 - **Tests** ensure reliability and demonstrate usage patterns
+
+All of the above is available from the top-level `proompt` package
+(`from proompt import ...`); concrete providers are also importable from the shorter
+`proompt.providers` path, e.g. `from proompt.providers import CsvDataProvider, SqliteProvider`.
 
 ## Why Proompt?
 
@@ -84,7 +93,7 @@ print(f"Analyze the data:\n{content}")
 
 ## Core Concepts
 
-A few example classes for extending the `DataProvider` class can be found in the `proompt.data` module.
+A few example classes for extending the `BaseProvider` class can be found in the `proompt.data` module.
 
 ### 🔌 Providers - Inject Data from Any Source
 
@@ -97,8 +106,8 @@ from proompt import CsvDataProvider, SqliteProvider
 csv_provider = CsvDataProvider("sales_data.csv")
 print(csv_provider.run().to_md())
 # | Product | Sales | Region |
-# | ------- | ----- | ------ |
-# | Widget  | 1000  | North  |
+# | --- | --- | --- |
+# | Widget | 1000 | North |
 
 # Database queries as TableData; call .to_md() for a markdown table
 db_provider = SqliteProvider(
@@ -106,10 +115,13 @@ db_provider = SqliteProvider(
     'SELECT * FROM employees WHERE department = "Engineering"'
 )
 print(db_provider.run().to_md())
-# | name  | role      | salary |
-# | ----- | --------- | ------ |
-# | Alice | Developer | 85000  |
+# | name | role | salary |
+# | --- | --- | --- |
+# | Alice | Developer | 85000 |
 ```
+
+Note: `to_md()` output is intentionally unpadded (single-dash `---` separators, no
+column-width alignment) — the tables above show the exact output, not a prettified version.
 
 ### 🛠️ Tool Context - Document Functions for LLMs
 
@@ -124,11 +136,14 @@ def calculate_tax(income: float, rate: float = 0.25) -> float:
 
 tool_ctx = ToolContext(calculate_tax)
 print(tool_ctx.render())
+# render() starts and ends with a blank line:
+#
 # Name: calculate_tax
 # Description: Calculate tax owed on income.
 # Arguments: income: float, rate: float = 0.25
 # Returns: float
 # Usage: Reference description for usage.
+#
 ```
 
 ### 📝 Prompt Sections - Compose Complex Prompts
@@ -137,7 +152,20 @@ Combine providers, tools, and context into reusable sections:
 
 ```python
 from textwrap import dedent
-from proompt import PromptSection, ToolContext, CsvDataProvider
+from proompt import Context, CsvDataProvider, PromptSection, ToolContext
+
+class MyContext(Context):
+    """Trivial Context example — holds and renders arbitrary dynamic info."""
+
+    def __init__(self, data: str):
+        self.data = data
+
+    def render(self) -> str:
+        return self.data
+
+def calculate_tax(income: float, rate: float = 0.25) -> float:
+    """Calculate tax owed on income."""
+    return income * rate
 
 class DataAnalysisSection(PromptSection):
 
@@ -159,6 +187,7 @@ class DataAnalysisSection(PromptSection):
         return self.formatter("Analyze the provided data")
 
 # Use it
+context = MyContext("Q3 2024 sales review")
 section = DataAnalysisSection(
     context=context,  # Use Context to pass dynamic info
     providers=[CsvDataProvider("metrics.csv")],  # accepts any number of Providers
@@ -179,7 +208,7 @@ provider = FileDataProvider("config.yaml")
 content = provider.run()  # raw string content
 ```
 
-**NOTE**: for structured YAML parsing, extend `DataProvider` to create `YamlProvider` class
+**NOTE**: for structured YAML parsing, extend `BaseProvider` to create a `YamlProvider` class
 
 ### CSV Provider
 ```python
@@ -195,6 +224,7 @@ See `proompt.data.TableData` and `proompt.data.to_markdown_table()` for conversi
 
 ### SQLite Provider
 ```python
+import asyncio
 from proompt import SqliteProvider
 
 # Execute SQL queries, get raw TableData back
@@ -205,11 +235,15 @@ provider = SqliteProvider(
 )
 
 # Async support; NOTE the async only runs sync method .run()
-result = await provider.arun()  # TableData instance
-markdown = result.to_md()  # Formatted markdown table
+async def main() -> None:
+    result = await provider.arun()  # TableData instance
+    markdown = result.to_md()  # Formatted markdown table
+    print(markdown)
+
+asyncio.run(main())
 ```
 
-**NOTE**: A _true_ asynchronous method would need to be defined when extending the `DataProvider` class.
+**NOTE**: A _true_ asynchronous method would need to be defined when extending the `BaseProvider` class.
 
 ## Advanced Usage
 
@@ -218,10 +252,12 @@ markdown = result.to_md()  # Formatted markdown table
 Creating custom providers is straightforward:
 
 ```python
-from proompt import BaseProvider
-import requests
+import json
+from urllib.request import Request, urlopen
 
-class ApiProvider(BaseProvider, str):
+from proompt import BaseProvider
+
+class ApiProvider(BaseProvider[str]):
 
     def __init__(self, url: str, api_key: str):
         self.url = url
@@ -237,11 +273,12 @@ class ApiProvider(BaseProvider, str):
         # NOTE: would be useful to include available endpoints
 
     def run(self, endpoint: str) -> str:
-        response = requests.get(
+        request = Request(
             f"{self.url}/{endpoint}",
             headers={"Authorization": f"Bearer {self.api_key}"}
         )
-        return response.json()
+        with urlopen(request) as response:
+            return json.load(response)
 
 # Use your custom provider
 api = ApiProvider("https://api.example.com", "your-key")
@@ -264,10 +301,10 @@ data = [
 table = TableData.from_dicts(data)
 markdown = table.to_md()
 print(markdown)
-# | name  | role     | salary |
-# | ----- | -------- | ------ |
-# | Alice | Engineer | 85000  |
-# | Bob   | Designer | 75000  |
+# | name | role | salary |
+# | --- | --- | --- |
+# | Alice | Engineer | 85000 |
+# | Bob | Designer | 75000 |
 ```
 
 ## API Reference
@@ -281,6 +318,9 @@ print(markdown)
 - **`BasePrompt`** - Full prompt composition
 
 ### Concrete Providers
+
+Importable from the top-level `proompt` package or from `proompt.providers`
+(`from proompt.providers import CsvDataProvider, SqliteProvider, FileDataProvider, ...`):
 
 - **`FileDataProvider`** - Read text files
 - **`CsvDataProvider`** - Read CSV files as `TableData` (`.to_md()` for markdown)
