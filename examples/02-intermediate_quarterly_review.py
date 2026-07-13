@@ -17,9 +17,7 @@ import statistics
 from datetime import datetime
 from textwrap import dedent, indent
 
-from proompt.base.context import Context, ToolContext
-from proompt.base.prompt import BasePrompt, PromptSection
-from proompt.base.provider import BaseProvider
+from proompt import BasePrompt, BaseProvider, Context, PromptSection, ToolContext
 
 INDENT_12 = " " * 12
 

@@ -8,7 +8,7 @@ custom analysis tools, and structured reporting sections.
 
 The example showcases:
 - 3 Custom DataProviders for different data sources
-- 3 Custom PromptSections for different analysis perspectives
+- 4 Custom PromptSections for different analysis perspectives
 - Multiple analysis tools with proper documentation
 - A complete custom Prompt that orchestrates everything
 - Real-world business intelligence use case
@@ -19,9 +19,7 @@ import statistics
 from datetime import datetime
 from textwrap import dedent, indent
 
-from proompt.base.context import Context, ToolContext
-from proompt.base.prompt import BasePrompt, PromptSection
-from proompt.base.provider import BaseProvider
+from proompt import BasePrompt, BaseProvider, Context, PromptSection, ToolContext
 
 INDENT_12 = " " * 12
 

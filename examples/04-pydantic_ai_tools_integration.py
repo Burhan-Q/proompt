@@ -14,8 +14,7 @@ from textwrap import dedent, indent
 
 from pydantic_ai import FunctionToolset, RunContext, Tool
 
-from proompt.base.context import ToolContext
-from proompt.base.prompt import BasePrompt, PromptSection
+from proompt import BasePrompt, PromptSection, ToolContext
 
 # ===== DEFINE SOME TOOLS USING PYDANTIC-AI =====
 
