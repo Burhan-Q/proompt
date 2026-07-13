@@ -1,6 +1,6 @@
 """Discoverable namespace for concrete data providers.
 
-Re-exports from :mod:`proompt.data`; both import paths are supported.
+Re-exports from proompt.data; both import paths are supported.
 """
 
 from proompt.data import (

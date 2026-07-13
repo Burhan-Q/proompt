@@ -1,9 +1,9 @@
 class RenderStrMixin:
-    """Mixin that makes ``str(obj)`` delegate to ``obj.render()``.
+    """Mixin that makes str(obj) delegate to obj.render().
 
-    The consuming class is responsible for defining ``render() -> str``.
+    The consuming class is responsible for defining render() -> str.
     """
 
     def __str__(self) -> str:
-        """String representation via ``render()``."""
+        """Return the string representation via render()."""
         return self.render()

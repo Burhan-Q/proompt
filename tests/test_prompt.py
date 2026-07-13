@@ -111,6 +111,11 @@ class TestPromptSection:
         section = ConcretePromptSection(providers=(provider,))
         assert section.providers == [provider]
 
+    def test_constructor_rejects_invalid_context(self):
+        """Constructor must validate context the same way the setter does (#3)."""
+        with pytest.raises(TypeError, match="Context must be an instance of Context"):
+            ConcretePromptSection(context="not a context")
+
     def test_initialization_minimal(self):
         """Test initialization with minimal parameters."""
         section = ConcretePromptSection()

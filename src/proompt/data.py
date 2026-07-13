@@ -1,11 +1,12 @@
 import csv
+from collections.abc import Sequence
 from io import StringIO
 from pathlib import Path
 
 from proompt.base.provider import BaseProvider
 
 
-def to_markdown_table(headers: list[str], rows: list[list]) -> str:
+def to_markdown_table(headers: list[str], rows: Sequence[Sequence]) -> str:
     """Convert headers and rows to a markdown table format."""
     result = "No results found."
 
@@ -25,14 +26,14 @@ def to_markdown_table(headers: list[str], rows: list[list]) -> str:
 class TableData:
     """Container for tabular data that can be converted to markdown format."""
 
-    def __init__(self, headers: list[str], rows: list[list]) -> None:
-        if not headers or not rows:
-            raise ValueError("Headers and rows must be non-empty.")
+    def __init__(self, headers: list[str], rows: Sequence[Sequence]) -> None:
+        if not headers:
+            raise ValueError("Headers must be non-empty.")
         self.headers = headers
         self.rows = rows
 
     @classmethod
-    def from_rows(cls, headers: list[str], rows: list[list]) -> "TableData":
+    def from_rows(cls, headers: list[str], rows: Sequence[Sequence]) -> "TableData":
         """Create TableData directly from headers and rows."""
         return cls(headers, rows)
 

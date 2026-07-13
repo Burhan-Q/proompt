@@ -21,12 +21,12 @@ def _strip_modules(text: str) -> str:
     return _MODULE_PREFIX.sub(r"\1", text)
 
 
-def render_annotation(annotation) -> str:
+def render_annotation(annotation: object) -> str:
     """Render a type annotation to a clean source-style string.
 
-    Handles unions (``X | Y``), subscripted generics, custom classes (module
-    prefixes stripped), ``Ellipsis``, ``None`` and empty annotations. Never
-    raises on ``types.UnionType`` (unlike ``annotation.__name__``).
+    Handles unions (X | Y), subscripted generics, custom classes (module
+    prefixes stripped), Ellipsis, None, and empty annotations. Never raises
+    on types.UnionType (unlike annotation.__name__).
     """
     if annotation is inspect.Parameter.empty or annotation is inspect.Signature.empty:
         return ""
@@ -72,6 +72,9 @@ class Context(RenderStrMixin, ABC):
         raise NotImplementedError
 
 
+ToolLike = Callable | "ToolContext" | Tool | FunctionToolset
+
+
 class ToolContext(RenderStrMixin):
     """
     Context for a tool, including its name, arguments, return type, and description.
@@ -80,7 +83,7 @@ class ToolContext(RenderStrMixin):
         tool_use (str): Description of how to use the tool.
         tool_name (str): Name of the tool.
         tool_description (str): Description of the tool's functionality.
-        tool_args (MappingProxytype): Arguments accepted by the tool.
+        tool_args (MappingProxyType): Arguments accepted by the tool.
         output_type (Any): Expected output type of the tool.
 
     Methods:
@@ -111,7 +114,7 @@ class ToolContext(RenderStrMixin):
         return cls(tool=tool.function)
 
     @classmethod
-    def normalize(cls, tool: Callable | "ToolContext" | Tool | FunctionToolset | None) -> list["ToolContext"]:
+    def normalize(cls, tool: "ToolLike | None") -> list["ToolContext"]:
         """
         Normalize any tool type to a list of ToolContext instances.
 
@@ -155,8 +158,7 @@ class ToolContext(RenderStrMixin):
 
     def render(self) -> str:
         """Render the tool context as a string."""
-        ret = self.output_type
-        returns = "None" if ret in (inspect.Signature.empty, None) else render_annotation(ret)
+        returns = render_annotation(self.output_type) or "None"
         return dedent(f"""
         Name: {self.tool_name}
         Description: {self.tool_description}
@@ -164,6 +166,3 @@ class ToolContext(RenderStrMixin):
         Returns: {returns}
         Usage: {self.tool_use}
         """)
-
-
-ToolLike = Callable | ToolContext | Tool | FunctionToolset

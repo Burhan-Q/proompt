@@ -12,10 +12,10 @@ class PromptSection(RenderStrMixin, ABC):
 
     Attributes:
         tools (list[ToolContext]): context information on tools to include in prompt
-        providers (BaseProvider): variable number of data providers, generally a subclass of BaseProvider
+        providers (list[BaseProvider]): variable number of data providers, generally a subclass of BaseProvider
 
     Properties:
-        context (Context): context information only accessible at runtime
+        context (Context | None): optional context attached to the section
 
     Methods:
         add_providers: extend the providers included
@@ -31,9 +31,11 @@ class PromptSection(RenderStrMixin, ABC):
         tools: Iterable[ToolLike] | None = None,
     ) -> None:
         """Initialize with optional context, providers, and tools."""
-        self._context = context
+        self._context = None
         self.providers: list[BaseProvider] = []
         self.tools: list[ToolContext] = []
+        if context is not None:
+            self.context = context
         self.add_providers(*(providers or ()))
         self.add_tools(*(tools or ()))
 
@@ -45,7 +47,7 @@ class PromptSection(RenderStrMixin, ABC):
     @context.setter
     def context(self, value: Context) -> None:
         """Set the context."""
-        if not isinstance(value, Context) or issubclass(value.__class__, Context) is False:
+        if not isinstance(value, Context):
             raise TypeError(f"Context must be an instance of Context or its subclass for {self.__class__.__name__}.")
         self._context = value
 
@@ -53,7 +55,7 @@ class PromptSection(RenderStrMixin, ABC):
         """Add variable quantity of providers."""
         self.providers.extend([p for p in providers if isinstance(p, BaseProvider)])
 
-    def add_tools(self, *tools) -> None:
+    def add_tools(self, *tools: ToolLike) -> None:
         """Add variable quantity of tools (ToolContext, pydantic-ai Tool, or FunctionToolset)."""
         for t in tools:
             self.tools.extend(ToolContext.normalize(t))

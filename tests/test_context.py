@@ -1,3 +1,4 @@
+import collections.abc
 import inspect
 import typing
 from abc import ABCMeta
@@ -9,6 +10,9 @@ from proompt.base.context import Context, ToolContext, render_annotation
 
 class _Money:
     """custom class for annotation tests"""
+
+
+_T = typing.TypeVar("_T")
 
 
 class ConcreteContext(Context):
@@ -64,6 +68,10 @@ class TestRenderAnnotation:
             (dict[str, _Money | None], "dict[str, _Money | None]"),
             (tuple[_Money, ...], "tuple[_Money, ...]"),
             (inspect.Parameter.empty, ""),
+            (typing.Literal["a", "b"], "Literal['a', 'b']"),
+            (collections.abc.Callable[[int], str], "Callable[[int], str]"),
+            (collections.abc.Callable[..., int], "Callable[..., int]"),
+            (_T, "~_T"),
         ],
     )
     def test_render_annotation(self, annotation, expected):
@@ -175,16 +183,11 @@ class TestToolContext:
         assert "b: float | str = 1.0" in rendered
         assert "Returns: dict[str, float | str]" in rendered
 
-    # TODO: more nicer
-    def f():
-        pass
-
     @pytest.mark.parametrize(
         "func,expected_return",
         [
             (lambda: None, "None"),
             (lambda x: x, "None"),  # No annotation means None
-            (f, ""),
         ],
     )
     def test_return_type_handling(self, func, expected_return):
@@ -192,4 +195,3 @@ class TestToolContext:
         tool_ctx = ToolContext(func)
         rendered = tool_ctx.render()
         assert f"Returns: {expected_return}" in rendered
-        # TODO: more complete
