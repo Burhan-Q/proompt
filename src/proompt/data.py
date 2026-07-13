@@ -118,16 +118,16 @@ class SqliteProvider(BaseProvider[TableData]):
 
         Args:
             database_path: Path to the SQLite database file
-            query: SQL query to execute (should be a SELECT statement for safety)
+            query: SQL query to execute (must start with SELECT)
             table_name: Optional table name for better context description
         """
         self.database_path = Path(database_path)
         self.query = query.strip()
         self.table_name = table_name
 
-        # Basic validation
-        if not self.query.upper().strip().startswith("SELECT"):
-            raise ValueError("Only SELECT queries are allowed for security reasons")
+        # Guard against obvious non-SELECT statements; NOT a security boundary.
+        if not self.query.upper().startswith("SELECT"):
+            raise ValueError("Only SELECT queries are supported by this provider")
 
     @property
     def name(self) -> str:

@@ -36,14 +36,16 @@ class SimpleMetricsProvider(BaseProvider[dict]):
     def provider_ctx(self) -> str:
         return f"Basic business metrics for {self.quarter}."
 
-    def run(self) -> dict:
-        """Return basic business metrics."""
-        return {
+    def run(self, include_growth: bool = True) -> dict:
+        """Return basic business metrics; runtime flag toggles growth."""
+        data = {
             "quarter": self.quarter,
             "revenue": random.randint(1000000, 2000000),
             "users": random.randint(50000, 100000),
-            "growth": round(random.uniform(0.05, 0.15), 3),
         }
+        if include_growth:
+            data["growth"] = round(random.uniform(0.05, 0.15), 3)
+        return data
 
 
 # ANALYSIS TOOL
@@ -87,18 +89,20 @@ class MetricsSection(PromptSection):
 
     def _format_data(self, metrics: dict) -> str:
         """Format metrics into readable report."""
-        return dedent(f"""\
+        report = dedent(f"""\
             ## Metrics Report - {metrics["quarter"]}
             - **Revenue:** ${metrics["revenue"]:,}
-            - **Users:** {metrics["users"]:,}
-            - **Growth:** {metrics["growth"]:.1%}""").strip()
+            - **Users:** {metrics["users"]:,}""").strip()
+        if "growth" in metrics:
+            report += f"\n- **Growth:** {metrics['growth']:.1%}"
+        return report
 
     def formatter(self) -> str:
         # Get data from provider
         formatted_data = []
         for provider in self.providers:
             if isinstance(provider, SimpleMetricsProvider):
-                metrics = provider.run()
+                metrics = provider.run(include_growth=True)
                 formatted_data.append(self._format_data(metrics))
 
         # Format with proper indentation

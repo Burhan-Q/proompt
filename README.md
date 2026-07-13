@@ -15,18 +15,12 @@ Using these functions:
 """
 
 # Write clean, composable prompts like this:
-from proompt.data import (
-    CsvDataProvider,
-    FileDataProvider,
-    SqliteProvider,
-)
-from proompt.base.context import ToolContext
+from proompt import CsvDataProvider, FileDataProvider, PromptSection, ToolContext
 
-section = PromptSection(
-    context=ToolContext(my_function),
-    CsvDataProvider("data.csv"),
-    FileDataProvider("file.txt"),
-    SqliteProvider("data.db"),
+section = MySection(
+    context=my_context,
+    providers=[CsvDataProvider("data.csv"), FileDataProvider("file.txt")],
+    tools=[ToolContext(my_function)],
 )
 ```
 
@@ -79,7 +73,7 @@ uv pip install proompt
 ```
 
 ```python
-from proompt.data import FileDataProvider
+from proompt import FileDataProvider
 
 # Read a file and inject it into your prompt
 provider = FileDataProvider("data.txt")
@@ -97,21 +91,21 @@ A few example classes for extending the `DataProvider` class can be found in the
 Providers fetch data from external sources and format it for LLM consumption:
 
 ```python
-from proompt.data import CsvDataProvider, SqliteProvider
+from proompt import CsvDataProvider, SqliteProvider
 
-# CSV data as markdown tables
+# CSV data as TableData; call .to_md() for a markdown table
 csv_provider = CsvDataProvider("sales_data.csv")
-print(csv_provider.run())
+print(csv_provider.run().to_md())
 # | Product | Sales | Region |
 # | ------- | ----- | ------ |
 # | Widget  | 1000  | North  |
 
-# Database queries as markdown tables
+# Database queries as TableData; call .to_md() for a markdown table
 db_provider = SqliteProvider(
     "company.db",
     'SELECT * FROM employees WHERE department = "Engineering"'
 )
-print(db_provider.run())
+print(db_provider.run().to_md())
 # | name  | role      | salary |
 # | ----- | --------- | ------ |
 # | Alice | Developer | 85000  |
@@ -122,7 +116,7 @@ print(db_provider.run())
 Automatically generate function documentation that LLMs can understand:
 
 ```python
-from proompt.base.context import ToolContext
+from proompt import ToolContext
 
 def calculate_tax(income: float, rate: float = 0.25) -> float:
     """Calculate tax owed on income."""
@@ -143,12 +137,12 @@ Combine providers, tools, and context into reusable sections:
 
 ```python
 from textwrap import dedent
-from proompt.base.prompt import PromptSection
+from proompt import PromptSection, ToolContext, CsvDataProvider
 
 class DataAnalysisSection(PromptSection):
 
     def formatter(self, instruction: str) -> str:
-        data = "\n\n".join(p.run() for p in self.providers)
+        data = "\n\n".join(p.run().to_md() for p in self.providers)
         tools = "\n\n".join(str(t) for t in self.tools)
 
         return dedent(f"""
@@ -167,8 +161,8 @@ class DataAnalysisSection(PromptSection):
 # Use it
 section = DataAnalysisSection(
     context=context,  # Use Context to pass dynamic info
+    providers=[CsvDataProvider("metrics.csv")],  # accepts any number of Providers
     tools=[ToolContext(calculate_tax)],
-    CsvDataProvider("metrics.csv"),  # accepts any number of Providers
 )
 
 prompt = str(section)  # Ready for your LLM
@@ -178,31 +172,32 @@ prompt = str(section)  # Ready for your LLM
 
 ### File Provider
 ```python
-from proompt.data import FileDataProvider
+from proompt import FileDataProvider
 
 # Read any text file
 provider = FileDataProvider("config.yaml")
-content = provider.run().  # raw string content
+content = provider.run()  # raw string content
 ```
 
 **NOTE**: for structured YAML parsing, extend `DataProvider` to create `YamlProvider` class
 
 ### CSV Provider
 ```python
-from proompt.data import CsvDataProvider
+from proompt import CsvDataProvider
 
-# Automatically converts CSV to markdown tables
+# Returns raw TableData; call .to_md() to format
 provider = CsvDataProvider("data.csv")
-table = provider.run()  # Returns formatted markdown table
+table = provider.run()  # TableData instance
+markdown = table.to_md()  # Formatted markdown table
 ```
 
 See `proompt.data.TableData` and `proompt.data.to_markdown_table()` for conversion.
 
 ### SQLite Provider
 ```python
-from proompt.data import SqliteProvider
+from proompt import SqliteProvider
 
-# Execute SQL queries, get markdown tables
+# Execute SQL queries, get raw TableData back
 provider = SqliteProvider(
     database_path="app.db",
     query="SELECT name, email FROM users WHERE active = 1",
@@ -210,7 +205,8 @@ provider = SqliteProvider(
 )
 
 # Async support; NOTE the async only runs sync method .run()
-result = await provider.arun()
+result = await provider.arun()  # TableData instance
+markdown = result.to_md()  # Formatted markdown table
 ```
 
 **NOTE**: A _true_ asynchronous method would need to be defined when extending the `DataProvider` class.
@@ -222,7 +218,7 @@ result = await provider.arun()
 Creating custom providers is straightforward:
 
 ```python
-from proompt.base.provider import BaseProvider
+from proompt import BaseProvider
 import requests
 
 class ApiProvider(BaseProvider, str):
@@ -257,7 +253,7 @@ data = api.run("users")
 Convert any data format to LLM-friendly markdown:
 
 ```python
-from proompt.data import TableData
+from proompt import TableData
 
 # From dictionaries
 data = [
@@ -287,8 +283,8 @@ print(markdown)
 ### Concrete Providers
 
 - **`FileDataProvider`** - Read text files
-- **`CsvDataProvider`** - Read CSV files as markdown tables
-- **`SqliteProvider`** - Execute SQL queries as markdown tables
+- **`CsvDataProvider`** - Read CSV files as `TableData` (`.to_md()` for markdown)
+- **`SqliteProvider`** - Execute SQL queries, returns `TableData` (`.to_md()` for markdown)
 
 ### Utilities
 
@@ -317,7 +313,7 @@ prompt = ChatPrompt(
 # Test individual components
 def test_csv_provider():
     provider = CsvDataProvider("test.csv")
-    result = provider.run()
+    result = provider.run().to_md()
     assert "| Name |" in result
 
 def test_tool_context():

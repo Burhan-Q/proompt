@@ -54,4 +54,4 @@ The test suite covers:
 - ✅ String representation methods
 - ✅ Initialization with various parameters
 
-All 36 tests pass, ensuring the base module functionality is working correctly.
+All 63 tests pass, ensuring the base module functionality is working correctly.
