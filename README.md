@@ -257,7 +257,7 @@ from urllib.request import Request, urlopen
 
 from proompt import BaseProvider
 
-class ApiProvider(BaseProvider[str]):
+class ApiProvider(BaseProvider[dict]):
 
     def __init__(self, url: str, api_key: str):
         self.url = url
@@ -272,7 +272,7 @@ class ApiProvider(BaseProvider[str]):
         return f"Fetches data from REST API at {self.url}"
         # NOTE: would be useful to include available endpoints
 
-    def run(self, endpoint: str) -> str:
+    def run(self, endpoint: str) -> dict:
         request = Request(
             f"{self.url}/{endpoint}",
             headers={"Authorization": f"Bearer {self.api_key}"}

@@ -1,7 +1,7 @@
 # Unit Tests for proompt
 
 This directory contains comprehensive unit tests for the `proompt.base` module components,
-the concrete `proompt.data`/`proompt.providers` providers, and the top-level `proompt` package.
+the concrete providers in `proompt.data` / `proompt.providers`, and the top-level `proompt` package.
 
 ## Test Structure
 
