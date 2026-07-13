@@ -1,9 +1,6 @@
-"""Discoverable namespace for concrete data providers.
+"""Concrete data providers and tabular helpers."""
 
-Re-exports from proompt.data; both import paths are supported.
-"""
-
-from proompt.data import (
+from proompt.providers.data import (
     CsvDataProvider,
     FileDataProvider,
     SqliteProvider,

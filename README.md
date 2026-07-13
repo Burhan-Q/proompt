@@ -38,8 +38,9 @@ proompt/
 │   │   ├── mixins.py
 │   │   ├── prompt.py
 │   │   └── provider.py
-│   ├── data.py            # Concrete data provider implementations
-│   └── providers.py       # Re-exports concrete providers under a shorter path
+│   └── providers/         # Concrete data provider implementations
+│       ├── __init__.py    # Re-exports the concrete providers
+│       └── data.py        # Provider implementations and tabular helpers
 ├── examples/              # Complete usage examples
 │   ├── 01-simple_quarterly_review.py
 │   ├── 02-intermediate_quarterly_review.py
@@ -93,7 +94,7 @@ print(f"Analyze the data:\n{content}")
 
 ## Core Concepts
 
-A few example classes for extending the `BaseProvider` class can be found in the `proompt.data` module.
+A few example classes for extending the `BaseProvider` class can be found in the `proompt.providers` module.
 
 ### 🔌 Providers - Inject Data from Any Source
 
@@ -220,7 +221,7 @@ table = provider.run()  # TableData instance
 markdown = table.to_md()  # Formatted markdown table
 ```
 
-See `proompt.data.TableData` and `proompt.data.to_markdown_table()` for conversion.
+See `proompt.providers.TableData` and `proompt.providers.to_markdown_table()` for conversion.
 
 ### SQLite Provider
 ```python

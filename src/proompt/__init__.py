@@ -3,7 +3,7 @@
 from proompt.base.context import Context, ToolContext
 from proompt.base.prompt import BasePrompt, PromptSection
 from proompt.base.provider import BaseProvider
-from proompt.data import (
+from proompt.providers import (
     CsvDataProvider,
     FileDataProvider,
     SqliteProvider,

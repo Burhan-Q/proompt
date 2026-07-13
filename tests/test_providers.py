@@ -1,7 +1,10 @@
+import importlib
 import sqlite3
 from pathlib import Path
 
-from proompt.data import CsvDataProvider, FileDataProvider, SqliteProvider, TableData
+import pytest
+
+from proompt.providers import CsvDataProvider, FileDataProvider, SqliteProvider, TableData
 
 
 def test_csv_run_returns_raw_tabledata(tmp_path: Path):
@@ -34,14 +37,26 @@ def test_file_run_returns_raw_text(tmp_path: Path):
 
 
 def test_providers_submodule_reexports():
+    import proompt
     from proompt import providers
-    from proompt import data
+    from proompt.providers import data
 
     assert providers.CsvDataProvider is data.CsvDataProvider
     assert providers.SqliteProvider is data.SqliteProvider
     assert providers.FileDataProvider is data.FileDataProvider
     assert providers.TableData is data.TableData
     assert providers.to_markdown_table is data.to_markdown_table
+
+    assert proompt.CsvDataProvider is providers.CsvDataProvider
+    assert proompt.FileDataProvider is providers.FileDataProvider
+    assert proompt.SqliteProvider is providers.SqliteProvider
+    assert proompt.TableData is providers.TableData
+    assert proompt.to_markdown_table is providers.to_markdown_table
+
+
+def test_proompt_data_module_removed():
+    with pytest.raises(ModuleNotFoundError):
+        importlib.import_module("proompt.data")
 
 
 def test_empty_rows_renders_no_results_found():
