@@ -1,7 +1,8 @@
 # Unit Tests for proompt
 
 This directory contains comprehensive unit tests for the `proompt.base` module components,
-the concrete providers in `proompt.data` / `proompt.providers`, and the top-level `proompt` package.
+the concrete providers in `proompt.providers` (implemented in `proompt.providers.data`), and
+the top-level `proompt` package.
 
 ## Test Structure
 
@@ -39,10 +40,13 @@ the concrete providers in `proompt.data` / `proompt.providers`, and the top-leve
   - Tests `__str__` delegation to `render()`
   - Tests abstract method enforcement
 
-### test_data.py
+### test_providers.py
 - Tests `CsvDataProvider`/`SqliteProvider`/`FileDataProvider` return raw `TableData`
   (not pre-rendered markdown) from `run()`
-- Tests the `proompt.providers` namespace re-exports the same objects as `proompt.data`
+- Tests the `proompt.providers` package re-exports the same objects as `proompt.providers.data`
+  (and that the top-level `proompt` names point at the same objects)
+- Tests that the old flat data-module import path is gone (importing it raises
+  `ModuleNotFoundError`; the implementations now live under `proompt.providers.data`)
 - Tests empty-result handling (zero rows, header-only CSV) renders "No results found."
 
 ### test_package.py
@@ -68,4 +72,4 @@ The test suite covers:
 - ✅ String representation methods
 - ✅ Initialization with various parameters
 
-All 70 tests pass, ensuring the library's functionality is working correctly.
+All 71 tests pass, ensuring the library's functionality is working correctly.
