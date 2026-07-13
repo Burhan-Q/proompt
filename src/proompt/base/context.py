@@ -1,10 +1,59 @@
+import collections.abc
 import inspect
+import re
+import types
+import typing
 from abc import ABC, abstractmethod
 from textwrap import dedent
 from typing import Callable
 
 from pydantic_ai.tools import Tool
 from pydantic_ai.toolsets import FunctionToolset
+
+_NONE_TYPE = type(None)
+_MODULE_PREFIX = re.compile(r"(?<![\"'\w.])(?:[A-Za-z_]\w*\.)+(\w+)")
+
+
+def _strip_modules(text: str) -> str:
+    """Remove dotted module prefixes from a rendered annotation string."""
+    return _MODULE_PREFIX.sub(r"\1", text)
+
+
+def render_annotation(annotation) -> str:
+    """Render a type annotation to a clean source-style string.
+
+    Handles unions (``X | Y``), subscripted generics, custom classes (module
+    prefixes stripped), ``Ellipsis``, ``None`` and empty annotations. Never
+    raises on ``types.UnionType`` (unlike ``annotation.__name__``).
+    """
+    if annotation is inspect.Parameter.empty or annotation is inspect.Signature.empty:
+        return ""
+    if annotation is None or annotation is _NONE_TYPE:
+        return "None"
+    if annotation is Ellipsis:
+        return "..."
+    if isinstance(annotation, type) and not typing.get_args(annotation):
+        return annotation.__qualname__
+
+    origin = typing.get_origin(annotation)
+    args = typing.get_args(annotation)
+
+    if origin is typing.Union or isinstance(annotation, types.UnionType):
+        return " | ".join(render_annotation(a) for a in args)
+
+    if origin is not None:
+        if origin is typing.Literal:
+            return f"Literal[{', '.join(repr(a) for a in args)}]"
+        if origin is collections.abc.Callable:
+            params, ret = args[0], args[-1]
+            params_s = "..." if params is Ellipsis else f"[{', '.join(render_annotation(p) for p in params)}]"
+            return f"Callable[{params_s}, {render_annotation(ret)}]"
+        name = origin.__qualname__ if isinstance(origin, type) else getattr(origin, "_name", None) or str(origin)
+        if args:
+            return f"{name}[{', '.join(render_annotation(a) for a in args)}]"
+        return name
+
+    return _strip_modules(inspect.formatannotation(annotation))
 
 
 class Context(ABC):
@@ -100,7 +149,7 @@ class ToolContext(Context):
         for name, param in self.tool_args.items():
             arg = f"{name}"
             if param.annotation is not inspect.Parameter.empty:
-                arg += f": {param.annotation.__name__}"
+                arg += f": {render_annotation(param.annotation)}"
             if param.default is not inspect.Parameter.empty:
                 arg += f"{' = ' + str(param.default)}"
             args_list.append(arg)
@@ -108,10 +157,12 @@ class ToolContext(Context):
 
     def render(self) -> str:
         """Render the tool context as a string."""
+        ret = self.output_type
+        returns = "None" if ret in (inspect.Signature.empty, None) else render_annotation(ret)
         return dedent(f"""
         Name: {self.tool_name}
         Description: {self.tool_description}
         Arguments: {self.args_render()}
-        Returns: {"None" if self.output_type in (inspect.Signature.empty, None) else self.output_type.__name__}
+        Returns: {returns}
         Usage: {self.tool_use}
         """)
