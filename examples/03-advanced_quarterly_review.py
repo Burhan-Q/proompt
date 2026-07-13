@@ -758,18 +758,26 @@ def main():
     # Create prompt sections with providers and tools
     print("📝 Building Prompt Sections...")
 
-    executive_section = ExecutiveSummarySection(business_context, [trend_tool, stats_tool], metrics_provider)
+    executive_section = ExecutiveSummarySection(
+        context=business_context, providers=[metrics_provider], tools=[trend_tool, stats_tool]
+    )
 
     technical_section = TechnicalAnalysisSection(
-        business_context, [stats_tool, risk_tool], logs_provider, metrics_provider
+        context=business_context,
+        providers=[logs_provider, metrics_provider],
+        tools=[stats_tool, risk_tool],
     )
 
     competitive_section = CompetitiveAnalysisSection(
-        business_context, [trend_tool, stats_tool], market_provider, metrics_provider
+        context=business_context,
+        providers=[market_provider, metrics_provider],
+        tools=[trend_tool, stats_tool],
     )
 
     recommendations_section = RecommendationsSection(
-        business_context, [trend_tool, risk_tool, stats_tool], metrics_provider, logs_provider
+        context=business_context,
+        providers=[metrics_provider, logs_provider],
+        tools=[trend_tool, risk_tool, stats_tool],
     )
 
     # Create the complete quarterly review prompt

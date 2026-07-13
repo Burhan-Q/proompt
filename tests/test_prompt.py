@@ -80,19 +80,36 @@ class TestPromptSection:
         self, context: ConcreteContext, provider: ConcreteProvider, tool_context: ToolContext
     ) -> ConcretePromptSection:
         """Create a test prompt section with all components."""
-        return ConcretePromptSection(context, [tool_context], provider)
+        return ConcretePromptSection(context=context, providers=[provider], tools=[tool_context])
 
     def test_init_with_all_params(
         self, context: ConcreteContext, provider: ConcreteProvider, tool_context: ToolContext
     ):
         """Test initialization with all parameters."""
-        section = ConcretePromptSection(context, [tool_context], provider)
+        section = ConcretePromptSection(context=context, providers=[provider], tools=[tool_context])
 
         assert section._context == context
         assert len(section.providers) == 1
         assert section.providers[0] == provider
         assert len(section.tools) == 1
         assert section.tools[0] == tool_context
+
+    def test_new_signature_keyword(self, context, provider, tool_context):
+        section = ConcretePromptSection(context=context, providers=[provider], tools=[tool_context])
+        assert section.context is context
+        assert section.providers == [provider]
+        assert section.tools == [tool_context]
+
+    def test_constructor_filters_junk_providers(self):
+        """Constructor uses the same validation path as add_providers (#6)."""
+        provider = ConcreteProvider()
+        section = ConcretePromptSection(providers=[provider, "nope", None])
+        assert section.providers == [provider]
+
+    def test_constructor_accepts_tuple(self):
+        provider = ConcreteProvider()
+        section = ConcretePromptSection(providers=(provider,))
+        assert section.providers == [provider]
 
     def test_initialization_minimal(self):
         """Test initialization with minimal parameters."""
@@ -143,7 +160,7 @@ class TestPromptSection:
         assert len(section.providers) == 2
         assert provider1 in section.providers and provider2 in section.providers
 
-        section = ConcretePromptSection(None, None, provider1, provider2)
+        section = ConcretePromptSection(providers=[provider1, provider2])
         assert provider1 in section.providers and provider2 in section.providers
 
     def test_add_providers_filters_invalid(self):

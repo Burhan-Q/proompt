@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
+from collections.abc import Iterable
 
-from proompt.base.context import Context, ToolContext
+from proompt.base.context import Context, ToolContext, ToolLike
 from proompt.base.mixins import RenderStrMixin
 from proompt.base.provider import BaseProvider
 
@@ -26,15 +27,15 @@ class PromptSection(RenderStrMixin, ABC):
     def __init__(
         self,
         context: Context | None = None,
-        tools: list | None = None,
-        *providers: BaseProvider | None,
+        providers: Iterable[BaseProvider] | None = None,
+        tools: Iterable[ToolLike] | None = None,
     ) -> None:
-        """Initialize the PromptSection with context, tools, and providers."""
+        """Initialize with optional context, providers, and tools."""
         self._context = context
-        self.providers = list(providers or [])
+        self.providers: list[BaseProvider] = []
         self.tools: list[ToolContext] = []
-        for t in tools or []:
-            self.tools.extend(ToolContext.normalize(t))
+        self.add_providers(*(providers or ()))
+        self.add_tools(*(tools or ()))
 
     @property
     def context(self) -> Context | None:

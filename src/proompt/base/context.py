@@ -164,3 +164,6 @@ class ToolContext(RenderStrMixin):
         Returns: {returns}
         Usage: {self.tool_use}
         """)
+
+
+ToolLike = Callable | ToolContext | Tool | FunctionToolset

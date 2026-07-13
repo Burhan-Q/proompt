@@ -175,7 +175,7 @@ def main():
     context = SimpleContext("StartupCorp", "Q3 2024")
 
     # Create section and prompt
-    metrics_section = MetricsSection(context, [growth_tool], metrics_provider)
+    metrics_section = MetricsSection(context=context, providers=[metrics_provider], tools=[growth_tool])
     prompt = SimpleQuarterlyPrompt("StartupCorp", "Q3 2024", metrics_section)
 
     # Display result
