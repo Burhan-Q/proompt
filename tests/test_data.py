@@ -31,3 +31,12 @@ def test_file_run_returns_raw_text(tmp_path: Path):
     f = tmp_path / "f.txt"
     f.write_text("hello")
     assert FileDataProvider(f).run() == "hello"
+
+
+def test_providers_submodule_reexports():
+    from proompt import providers
+    from proompt import data
+
+    assert providers.CsvDataProvider is data.CsvDataProvider
+    assert providers.SqliteProvider is data.SqliteProvider
+    assert providers.FileDataProvider is data.FileDataProvider
