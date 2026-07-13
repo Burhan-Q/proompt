@@ -10,6 +10,8 @@ from typing import Callable
 from pydantic_ai.tools import Tool
 from pydantic_ai.toolsets import FunctionToolset
 
+from proompt.base.mixins import RenderStrMixin
+
 _NONE_TYPE = type(None)
 _MODULE_PREFIX = re.compile(r"(?<![\"'\w.])(?:[A-Za-z_]\w*\.)+(\w+)")
 
@@ -56,7 +58,7 @@ def render_annotation(annotation) -> str:
     return _strip_modules(inspect.formatannotation(annotation))
 
 
-class Context(ABC):
+class Context(RenderStrMixin, ABC):
     """
     Base class for different types of contexts.
 
@@ -69,12 +71,8 @@ class Context(ABC):
         """Render the context as a string."""
         raise NotImplementedError
 
-    def __str__(self) -> str:
-        """String representation of the context."""
-        return self.render()
 
-
-class ToolContext(Context):
+class ToolContext(RenderStrMixin):
     """
     Context for a tool, including its name, arguments, return type, and description.
 

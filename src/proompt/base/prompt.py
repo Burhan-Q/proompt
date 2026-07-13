@@ -1,10 +1,11 @@
 from abc import ABC, abstractmethod
 
 from proompt.base.context import Context, ToolContext
+from proompt.base.mixins import RenderStrMixin
 from proompt.base.provider import BaseProvider
 
 
-class PromptSection(ABC):
+class PromptSection(RenderStrMixin, ABC):
     """
     Abstract base class for different sections of a prompt.
 
@@ -36,10 +37,8 @@ class PromptSection(ABC):
             self.tools.extend(ToolContext.normalize(t))
 
     @property
-    def context(self) -> Context:
-        """Get the context."""
-        if not self._context:
-            raise ValueError(f"Context is not set for {self.__class__.__name__}.")
+    def context(self) -> Context | None:
+        """Get the context (None if unset)."""
         return self._context
 
     @context.setter
@@ -68,12 +67,8 @@ class PromptSection(ABC):
         """Render the prompt section as a string."""
         raise NotImplementedError
 
-    def __str__(self) -> str:
-        """String representation of the prompt section."""
-        return self.render()
 
-
-class BasePrompt(ABC):
+class BasePrompt(RenderStrMixin, ABC):
     """
     Abstract base class for different types of prompts.
 
@@ -92,7 +87,3 @@ class BasePrompt(ABC):
     def render(self) -> str:
         """Render the prompt as a string."""
         raise NotImplementedError
-
-    def __str__(self) -> str:
-        """String representation of the prompt."""
-        return self.render()

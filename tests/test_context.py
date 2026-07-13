@@ -160,6 +160,10 @@ class TestToolContext:
         tool_ctx = ToolContext(named_function)
         assert str(tool_ctx) == tool_ctx.render()
 
+    def test_toolcontext_is_not_a_context(self):
+        """ToolContext must NOT be substitutable for Context."""
+        assert not issubclass(ToolContext, Context)
+
     def test_render_survives_union_annotations(self):
         """render() must not crash on `X | Y` annotations (was AttributeError)."""
 

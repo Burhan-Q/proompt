@@ -107,11 +107,9 @@ class TestPromptSection:
         assert prompt_section.context == context
 
     def test_context_property_get_not_set(self):
-        """Test context property getter when not set."""
+        """Unset context returns None (does not raise)."""
         section = ConcretePromptSection()
-
-        with pytest.raises(ValueError, match="Context is not set"):
-            _ = section.context
+        assert section.context is None
 
     def test_context_property_set_valid(self):
         """Test context property setter with valid context."""
@@ -127,6 +125,12 @@ class TestPromptSection:
 
         with pytest.raises(TypeError, match="Context must be an instance of Context"):
             section.context = "not a context"
+
+    def test_context_setter_rejects_toolcontext(self):
+        """A ToolContext is tool documentation, not situational context."""
+        section = ConcretePromptSection()
+        with pytest.raises(TypeError, match="Context must be an instance of Context"):
+            section.context = ToolContext(lambda: None)
 
     def test_add_providers(self):
         """Test adding providers."""
