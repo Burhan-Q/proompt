@@ -80,19 +80,41 @@ class TestPromptSection:
         self, context: ConcreteContext, provider: ConcreteProvider, tool_context: ToolContext
     ) -> ConcretePromptSection:
         """Create a test prompt section with all components."""
-        return ConcretePromptSection(context, [tool_context], provider)
+        return ConcretePromptSection(context=context, providers=[provider], tools=[tool_context])
 
     def test_init_with_all_params(
         self, context: ConcreteContext, provider: ConcreteProvider, tool_context: ToolContext
     ):
         """Test initialization with all parameters."""
-        section = ConcretePromptSection(context, [tool_context], provider)
+        section = ConcretePromptSection(context=context, providers=[provider], tools=[tool_context])
 
         assert section._context == context
         assert len(section.providers) == 1
         assert section.providers[0] == provider
         assert len(section.tools) == 1
         assert section.tools[0] == tool_context
+
+    def test_new_signature_keyword(self, context, provider, tool_context):
+        section = ConcretePromptSection(context=context, providers=[provider], tools=[tool_context])
+        assert section.context is context
+        assert section.providers == [provider]
+        assert section.tools == [tool_context]
+
+    def test_constructor_filters_junk_providers(self):
+        """Constructor uses the same validation path as add_providers (#6)."""
+        provider = ConcreteProvider()
+        section = ConcretePromptSection(providers=[provider, "nope", None])
+        assert section.providers == [provider]
+
+    def test_constructor_accepts_tuple(self):
+        provider = ConcreteProvider()
+        section = ConcretePromptSection(providers=(provider,))
+        assert section.providers == [provider]
+
+    def test_constructor_rejects_invalid_context(self):
+        """Constructor must validate context the same way the setter does (#3)."""
+        with pytest.raises(TypeError, match="Context must be an instance of Context"):
+            ConcretePromptSection(context="not a context")
 
     def test_initialization_minimal(self):
         """Test initialization with minimal parameters."""
@@ -107,11 +129,9 @@ class TestPromptSection:
         assert prompt_section.context == context
 
     def test_context_property_get_not_set(self):
-        """Test context property getter when not set."""
+        """Unset context returns None (does not raise)."""
         section = ConcretePromptSection()
-
-        with pytest.raises(ValueError, match="Context is not set"):
-            _ = section.context
+        assert section.context is None
 
     def test_context_property_set_valid(self):
         """Test context property setter with valid context."""
@@ -128,6 +148,12 @@ class TestPromptSection:
         with pytest.raises(TypeError, match="Context must be an instance of Context"):
             section.context = "not a context"
 
+    def test_context_setter_rejects_toolcontext(self):
+        """A ToolContext is tool documentation, not situational context."""
+        section = ConcretePromptSection()
+        with pytest.raises(TypeError, match="Context must be an instance of Context"):
+            section.context = ToolContext(lambda: None)
+
     def test_add_providers(self):
         """Test adding providers."""
         section = ConcretePromptSection()
@@ -139,7 +165,7 @@ class TestPromptSection:
         assert len(section.providers) == 2
         assert provider1 in section.providers and provider2 in section.providers
 
-        section = ConcretePromptSection(None, None, provider1, provider2)
+        section = ConcretePromptSection(providers=[provider1, provider2])
         assert provider1 in section.providers and provider2 in section.providers
 
     def test_add_providers_filters_invalid(self):

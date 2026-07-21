@@ -296,10 +296,9 @@ wheels = [
 
 [[package]]
 name = "proompt"
-version = "0.2.0"
+version = "0.3.0"
 source = { editable = "." }
 dependencies = [
-    { name = "pydantic" },
     { name = "pydantic-ai-slim" },
 ]
 
@@ -313,7 +312,6 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "pydantic", specifier = ">=2.11.9" },
     { name = "pydantic-ai-slim", specifier = ">=1.11.0" },
     { name = "pylint", marker = "extra == 'dev'", specifier = ">=3.3.8" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.4.2" },

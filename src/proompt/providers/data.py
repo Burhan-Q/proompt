@@ -1,11 +1,12 @@
 import csv
+from collections.abc import Sequence
 from io import StringIO
 from pathlib import Path
 
 from proompt.base.provider import BaseProvider
 
 
-def to_markdown_table(headers: list[str], rows: list[list]) -> str:
+def to_markdown_table(headers: list[str], rows: Sequence[Sequence]) -> str:
     """Convert headers and rows to a markdown table format."""
     result = "No results found."
 
@@ -25,14 +26,14 @@ def to_markdown_table(headers: list[str], rows: list[list]) -> str:
 class TableData:
     """Container for tabular data that can be converted to markdown format."""
 
-    def __init__(self, headers: list[str], rows: list[list]) -> None:
-        if not headers or not rows:
-            raise ValueError("Headers and rows must be non-empty.")
+    def __init__(self, headers: list[str], rows: Sequence[Sequence]) -> None:
+        if not headers:
+            raise ValueError("Headers must be non-empty.")
         self.headers = headers
         self.rows = rows
 
     @classmethod
-    def from_rows(cls, headers: list[str], rows: list[list]) -> "TableData":
+    def from_rows(cls, headers: list[str], rows: Sequence[Sequence]) -> "TableData":
         """Create TableData directly from headers and rows."""
         return cls(headers, rows)
 
@@ -88,7 +89,7 @@ class FileDataProvider(BaseProvider[str]):
         return self.file.read_text(*args, **kwargs)
 
 
-class CsvDataProvider(BaseProvider[str]):
+class CsvDataProvider(BaseProvider[TableData]):
     """A simple provider that returns the contents of a CSV file."""
 
     def __init__(self, file: str | Path) -> None:
@@ -102,33 +103,32 @@ class CsvDataProvider(BaseProvider[str]):
     @property
     def provider_ctx(self) -> str:
         """Get informational context about the provider."""
-        return f"Returns a markdown formatted table of the CSV data from {self.file}."
+        return f"Returns the CSV data from {self.file} as raw TableData (call .to_md() for a markdown table)."
 
-    def run(self, *args, **kwargs) -> str:
-        """Return the CSV data as a markdown table."""
+    def run(self, *args, **kwargs) -> TableData:
+        """Return the CSV data as raw TableData (call .to_md() to format)."""
         csv_text = self.file.read_text(*args, **kwargs)
-        table_data = TableData.from_csv_str(csv_text)
-        return table_data.to_md()
+        return TableData.from_csv_str(csv_text)
 
 
-class SqliteProvider(BaseProvider[str]):
-    """A provider that executes SQL queries against a SQLite database and returns formatted results."""
+class SqliteProvider(BaseProvider[TableData]):
+    """A provider that executes SQL queries against a SQLite database and returns raw TableData."""
 
     def __init__(self, database_path: str | Path, query: str, table_name: str | None = None) -> None:
         """Initialize the SQLite provider.
 
         Args:
             database_path: Path to the SQLite database file
-            query: SQL query to execute (should be a SELECT statement for safety)
+            query: SQL query to execute (must start with SELECT)
             table_name: Optional table name for better context description
         """
         self.database_path = Path(database_path)
         self.query = query.strip()
         self.table_name = table_name
 
-        # Basic validation
-        if not self.query.upper().strip().startswith("SELECT"):
-            raise ValueError("Only SELECT queries are allowed for security reasons")
+        # Guard against obvious non-SELECT statements; NOT a security boundary.
+        if not self.query.upper().startswith("SELECT"):
+            raise ValueError("Only SELECT queries are supported by this provider")
 
     @property
     def name(self) -> str:
@@ -142,23 +142,19 @@ class SqliteProvider(BaseProvider[str]):
         table_info = f" in table '{self.table_name}'" if self.table_name else ""
         return f"Executes SQL query against SQLite database {self.database_path}{table_info}. Query: {self.query}"
 
-    def run(self, *args, **kwargs) -> str:
-        """Execute the SQL query and return results as a markdown table."""
+    def run(self, *args, **kwargs) -> TableData:
+        """Execute the SQL query and return raw TableData (call .to_md() to format)."""
         import sqlite3
 
         with sqlite3.connect(self.database_path) as conn:
             cursor = conn.cursor()
             cursor.execute(self.query)
             results = cursor.fetchall()
-
-            # Convert to TableData format
             headers = [description[0] for description in cursor.description]
-            table_data = TableData.from_rows(headers, results)
+            return TableData.from_rows(headers, results)
 
-            return table_data.to_md()
-
-    async def arun(self, *args, **kwargs) -> str:
-        """Asynchronously execute the SQL query and return results as a markdown table."""
+    async def arun(self, *args, **kwargs) -> TableData:
+        """Asynchronously execute the SQL query and return raw TableData."""
         # For SQLite, we'll just run the synchronous version since SQLite is file-based
         # In a real async implementation, you might use aiosqlite or similar
         return self.run(*args, **kwargs)

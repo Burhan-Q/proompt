@@ -1,19 +1,21 @@
 from abc import ABC, abstractmethod
+from collections.abc import Iterable
 
-from proompt.base.context import Context, ToolContext
+from proompt.base.context import Context, ToolContext, ToolLike
+from proompt.base.mixins import RenderStrMixin
 from proompt.base.provider import BaseProvider
 
 
-class PromptSection(ABC):
+class PromptSection(RenderStrMixin, ABC):
     """
     Abstract base class for different sections of a prompt.
 
     Attributes:
         tools (list[ToolContext]): context information on tools to include in prompt
-        providers (BaseProvider): variable number of data providers, generally a subclass of BaseProvider
+        providers (list[BaseProvider]): variable number of data providers, generally a subclass of BaseProvider
 
     Properties:
-        context (Context): context information only accessible at runtime
+        context (Context | None): optional context attached to the section
 
     Methods:
         add_providers: extend the providers included
@@ -25,27 +27,27 @@ class PromptSection(ABC):
     def __init__(
         self,
         context: Context | None = None,
-        tools: list | None = None,
-        *providers: BaseProvider | None,
+        providers: Iterable[BaseProvider] | None = None,
+        tools: Iterable[ToolLike] | None = None,
     ) -> None:
-        """Initialize the PromptSection with context, tools, and providers."""
-        self._context = context
-        self.providers = list(providers or [])
+        """Initialize with optional context, providers, and tools."""
+        self._context = None
+        self.providers: list[BaseProvider] = []
         self.tools: list[ToolContext] = []
-        for t in tools or []:
-            self.tools.extend(ToolContext.normalize(t))
+        if context is not None:
+            self.context = context
+        self.add_providers(*(providers or ()))
+        self.add_tools(*(tools or ()))
 
     @property
-    def context(self) -> Context:
-        """Get the context."""
-        if not self._context:
-            raise ValueError(f"Context is not set for {self.__class__.__name__}.")
+    def context(self) -> Context | None:
+        """Get the context (None if unset)."""
         return self._context
 
     @context.setter
     def context(self, value: Context) -> None:
         """Set the context."""
-        if not isinstance(value, Context) or issubclass(value.__class__, Context) is False:
+        if not isinstance(value, Context):
             raise TypeError(f"Context must be an instance of Context or its subclass for {self.__class__.__name__}.")
         self._context = value
 
@@ -53,7 +55,7 @@ class PromptSection(ABC):
         """Add variable quantity of providers."""
         self.providers.extend([p for p in providers if isinstance(p, BaseProvider)])
 
-    def add_tools(self, *tools) -> None:
+    def add_tools(self, *tools: ToolLike) -> None:
         """Add variable quantity of tools (ToolContext, pydantic-ai Tool, or FunctionToolset)."""
         for t in tools:
             self.tools.extend(ToolContext.normalize(t))
@@ -68,12 +70,8 @@ class PromptSection(ABC):
         """Render the prompt section as a string."""
         raise NotImplementedError
 
-    def __str__(self) -> str:
-        """String representation of the prompt section."""
-        return self.render()
 
-
-class BasePrompt(ABC):
+class BasePrompt(RenderStrMixin, ABC):
     """
     Abstract base class for different types of prompts.
 
@@ -92,7 +90,3 @@ class BasePrompt(ABC):
     def render(self) -> str:
         """Render the prompt as a string."""
         raise NotImplementedError
-
-    def __str__(self) -> str:
-        """String representation of the prompt."""
-        return self.render()

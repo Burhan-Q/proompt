@@ -1,4 +1,6 @@
 import inspect
+import re
+import typing
 from abc import ABC, abstractmethod
 from textwrap import dedent
 from typing import Callable
@@ -6,8 +8,39 @@ from typing import Callable
 from pydantic_ai.tools import Tool
 from pydantic_ai.toolsets import FunctionToolset
 
+from proompt.base.mixins import RenderStrMixin
 
-class Context(ABC):
+_NONE_TYPE = type(None)
+_MODULE_PREFIX = re.compile(r"(?<![\"'\w.])(?:[A-Za-z_]\w*\.)+(\w+)")
+
+
+def _strip_modules(text: str) -> str:
+    """Remove dotted module prefixes from a rendered annotation string."""
+    return _MODULE_PREFIX.sub(r"\1", text)
+
+
+def render_annotation(annotation: object) -> str:
+    """Render a type annotation as a clean, source-style string.
+
+    Delegates structural formatting (subscripted generics, Callable, Literal,
+    and nesting) to inspect.formatannotation, then strips module prefixes so
+    custom classes read as bare names. Optional/Union are normalized to the
+    "A | B" form. Unlike annotation.__name__, this never raises on
+    types.UnionType and never truncates generic parameters; empty annotations
+    render as "".
+    """
+    if annotation is inspect.Parameter.empty or annotation is inspect.Signature.empty:
+        result = ""
+    elif annotation is None or annotation is _NONE_TYPE:
+        result = "None"
+    elif typing.get_origin(annotation) is typing.Union:
+        result = " | ".join(render_annotation(arg) for arg in typing.get_args(annotation))
+    else:
+        result = _strip_modules(inspect.formatannotation(annotation))
+    return result
+
+
+class Context(RenderStrMixin, ABC):
     """
     Base class for different types of contexts.
 
@@ -20,12 +53,11 @@ class Context(ABC):
         """Render the context as a string."""
         raise NotImplementedError
 
-    def __str__(self) -> str:
-        """String representation of the context."""
-        return self.render()
+
+ToolLike = Callable | "ToolContext" | Tool | FunctionToolset
 
 
-class ToolContext(Context):
+class ToolContext(RenderStrMixin):
     """
     Context for a tool, including its name, arguments, return type, and description.
 
@@ -33,7 +65,7 @@ class ToolContext(Context):
         tool_use (str): Description of how to use the tool.
         tool_name (str): Name of the tool.
         tool_description (str): Description of the tool's functionality.
-        tool_args (MappingProxytype): Arguments accepted by the tool.
+        tool_args (MappingProxyType): Arguments accepted by the tool.
         output_type (Any): Expected output type of the tool.
 
     Methods:
@@ -64,7 +96,7 @@ class ToolContext(Context):
         return cls(tool=tool.function)
 
     @classmethod
-    def normalize(cls, tool: Callable | "ToolContext" | Tool | FunctionToolset | None) -> list["ToolContext"]:
+    def normalize(cls, tool: "ToolLike | None") -> list["ToolContext"]:
         """
         Normalize any tool type to a list of ToolContext instances.
 
@@ -75,7 +107,7 @@ class ToolContext(Context):
         - None or invalid: Returns empty list
 
         Args:
-            tool (Callable | ToolContext | Tool | FunctionToolset | None): Tool of any supported type
+            tool (ToolLike | None): Tool of any supported type
 
         Returns:
             List of ToolContext instances (may be empty)
@@ -100,7 +132,7 @@ class ToolContext(Context):
         for name, param in self.tool_args.items():
             arg = f"{name}"
             if param.annotation is not inspect.Parameter.empty:
-                arg += f": {param.annotation.__name__}"
+                arg += f": {render_annotation(param.annotation)}"
             if param.default is not inspect.Parameter.empty:
                 arg += f"{' = ' + str(param.default)}"
             args_list.append(arg)
@@ -108,10 +140,11 @@ class ToolContext(Context):
 
     def render(self) -> str:
         """Render the tool context as a string."""
+        returns = render_annotation(self.output_type) or "None"
         return dedent(f"""
         Name: {self.tool_name}
         Description: {self.tool_description}
         Arguments: {self.args_render()}
-        Returns: {"None" if self.output_type in (inspect.Signature.empty, None) else self.output_type.__name__}
+        Returns: {returns}
         Usage: {self.tool_use}
         """)

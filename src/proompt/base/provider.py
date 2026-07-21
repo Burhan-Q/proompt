@@ -41,3 +41,7 @@ class BaseProvider(ABC, Generic[DataType]):
     def __call__(self, *args, **kwargs) -> DataType:
         """Call the provider and return the result."""
         return self.run(*args, **kwargs)
+
+    def __repr__(self) -> str:
+        """Developer/LLM-facing metadata view of the provider."""
+        return f"{type(self).__name__}(name={self.name!r}, provider_ctx={self.provider_ctx!r})"

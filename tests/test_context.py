@@ -1,24 +1,18 @@
+import collections.abc
 import inspect
+import typing
 from abc import ABCMeta
-from textwrap import dedent
 
 import pytest
 
-from proompt.base.context import Context, ToolContext
+from proompt.base.context import Context, ToolContext, render_annotation
 
 
-def format_args(args_dict: dict) -> str:
-    """Tool argument string formatting logic."""
-    args_list = []
-    for name, param in args_dict.items():
-        if param.annotation is not inspect.Parameter.empty:
-            args_list.append(
-                f"{name}: {param.annotation.__name__}"
-                f"{' = ' + str(param.default) if param.default is not inspect.Parameter.empty else ''}"
-            )
-        else:
-            args_list.append(name)
-    return ", ".join(args_list)
+class _Money:
+    """custom class for annotation tests"""
+
+
+_T = typing.TypeVar("_T")
 
 
 class ConcreteContext(Context):
@@ -54,6 +48,34 @@ class TestContextBase:
         assert Context.__class__ == ABCMeta
         assert hasattr(Context, "__abstractmethods__")
         assert "render" in Context.__abstractmethods__
+
+
+class TestRenderAnnotation:
+    @pytest.mark.parametrize(
+        "annotation,expected",
+        [
+            (int, "int"),
+            (str | int, "str | int"),
+            (dict[str, int], "dict[str, int]"),
+            (dict[str, float | str], "dict[str, float | str]"),
+            (list[dict], "list[dict]"),
+            (typing.Optional[int], "int | None"),
+            (typing.Union[int, str], "int | str"),
+            (None, "None"),
+            (_Money, "_Money"),
+            (_Money | None, "_Money | None"),
+            (list[_Money], "list[_Money]"),
+            (dict[str, _Money | None], "dict[str, _Money | None]"),
+            (tuple[_Money, ...], "tuple[_Money, ...]"),
+            (inspect.Parameter.empty, ""),
+            (typing.Literal["a", "b"], "Literal['a', 'b']"),
+            (collections.abc.Callable[[int], str], "Callable[[int], str]"),
+            (collections.abc.Callable[..., int], "Callable[..., int]"),
+            (_T, "~_T"),
+        ],
+    )
+    def test_render_annotation(self, annotation, expected):
+        assert render_annotation(annotation) == expected
 
 
 class TestToolContext:
@@ -131,34 +153,41 @@ class TestToolContext:
         assert tool_ctx.output_type is inspect.Parameter.empty
 
     def test_render_output(self, named_function):
-        """Test that render produces expected format."""
-        tool_ctx = ToolContext(named_function)
-        rendered = tool_ctx.render()
-        result = dedent(f"""
-            Name: {named_function.__name__}
-            Description: {named_function.__doc__ or "No description available."}
-            Arguments: {format_args(dict(inspect.signature(named_function).parameters))}
-            Returns: {inspect.signature(named_function).return_annotation.__name__}
-            Usage: Reference description for usage.
-            """)
-
-        assert rendered == result
+        """render() produces the exact expected block."""
+        rendered = ToolContext(named_function).render()
+        assert rendered == (
+            "\nName: test_function"
+            "\nDescription: Test function docstring."
+            "\nArguments: x: int, y: str = default"
+            "\nReturns: str"
+            "\nUsage: Reference description for usage.\n"
+        )
 
     def test_str_delegates_to_render(self, named_function):
         """Test that __str__ delegates to render."""
         tool_ctx = ToolContext(named_function)
         assert str(tool_ctx) == tool_ctx.render()
 
-    # TODO: more nicer
-    def f():
-        pass
+    def test_toolcontext_is_not_a_context(self):
+        """ToolContext must NOT be substitutable for Context."""
+        assert not issubclass(ToolContext, Context)
+
+    def test_render_survives_union_annotations(self):
+        """render() must not crash on `X | Y` annotations (was AttributeError)."""
+
+        def f(a: int, b: float | str = 1.0) -> dict[str, float | str]:
+            """union sig"""
+            return {}
+
+        rendered = ToolContext(f).render()
+        assert "b: float | str = 1.0" in rendered
+        assert "Returns: dict[str, float | str]" in rendered
 
     @pytest.mark.parametrize(
         "func,expected_return",
         [
             (lambda: None, "None"),
             (lambda x: x, "None"),  # No annotation means None
-            (f, ""),
         ],
     )
     def test_return_type_handling(self, func, expected_return):
@@ -166,4 +195,3 @@ class TestToolContext:
         tool_ctx = ToolContext(func)
         rendered = tool_ctx.render()
         assert f"Returns: {expected_return}" in rendered
-        # TODO: more complete
